@@ -12,12 +12,13 @@
       "max": [
         15.747098922729492,
         25.071685791015625,
-        18.822284698486328
+        18.82228660583496
       ]
     },
     "visual_tris": 1013732,
-    "collision_tris": 393132,
-    "chunks": 2,
+    "collision_tris": 393230,
+    "chunks": 12,
+    "chunk_size": 12.0,
     "lods": false
   },
   {
@@ -38,7 +39,8 @@
     },
     "visual_tris": 299980,
     "collision_tris": 60000,
-    "chunks": 53,
+    "chunks": 144,
+    "chunk_size": 48.0,
     "lods": true
   },
   {
@@ -58,8 +60,10 @@
       ]
     },
     "visual_tris": 336554,
-    "collision_tris": 225009,
-    "chunks": 39,
-    "lods": true
+    "collision_tris": 225010,
+    "chunks": 135,
+    "chunk_size": 186.36295318603516,
+    "lods": true,
+    "facade_detail": true
   }
 ]

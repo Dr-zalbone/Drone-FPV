@@ -40,7 +40,7 @@ CHUNK_GRID = 16
 CHUNK_MIN_SIZE = 48.0
 # Discrete LODs per chunk: LOD0 = original, then these triangle ratios.
 # The game swaps them by distance (visibility ranges), see main.gd _apply_quality.
-LOD_RATIOS = (0.3, 0.08)
+LOD_RATIOS = (0.5, 0.2)
 LOD_MIN_TRIS = 400  # smaller chunks only get LOD0
 DRONE_VISUAL_TRIS = 25_000
 DRONE_TEXTURE_MAX = 1024
@@ -70,7 +70,9 @@ MAP_OVERRIDES = {
     # (culling + view-distance) and no LOD1/LOD2.
     "cathedral": {"collision_collapse": False, "collision_voxel": 0.35, "lods": False, "chunk_size": 12.0},
     # Miniature city (~8 x 11 units); x250 puts the tallest towers near 500 m.
-    "new_york_city_manhattan": {"scale": 250.0},
+    # Its single 1024 px atlas is ~0.12 px/m, so the game adds procedural
+    # window detail (shaders/facade_detail.gdshader).
+    "new_york_city_manhattan": {"scale": 250.0, "facade_detail": True},
 }
 
 # Objects we never keep (we render our own sky).

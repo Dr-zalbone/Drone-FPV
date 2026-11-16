@@ -9,7 +9,7 @@ imported Sketchfab worlds. Every view gives a full 360° look-around.
 |---|---|---|
 | **FPV (goggles)** | all drones | Free 360° look from the drone camera. It never steers the drone. The default view **turns with the drone**. |
 | **3rd person** | all drones | Turning your head **orbits** the camera around the drone. The default view is **world-fixed**. |
-| **Flyer (pilot)** | Mini 5 Pro, FlyCart | You stand still as the pilot and can only move your head. The RC in your left hand shows the live drone camera. |
+| **Flyer (pilot)** | Mini 5 Pro, FlyCart | You stand still as the pilot. Your body turns only on yaw with your head, and the RC is held at chest height, so looking down always shows its live drone-camera screen and telemetry. |
 
 Press **X** (or **L**) to switch the active view between "turns with drone" and "world-fixed".
 In the pause menu, you can also turn on "FPV horizon tilts with drone" (real goggles feel, harder on the stomach).
@@ -59,7 +59,9 @@ tools/process_models.sh
 ```
 
 The pipeline does the following:
-- Decimates the map visuals to 350k triangles and downsizes textures to 2048 px.
+- Keeps map visuals at the **original** geometry and the original texture bytes. Map textures are imported lossless.
+- Splits each map into spatial chunks: 48–190 m cells, or 12 m for the cathedral.
+- Gives each chunk LOD0 (the original), LOD1 (50 %) and LOD2 (20 %).
 - Builds a merged collision mesh of up to 60k triangles. The mesh name ends in `-colonly`, so Godot imports it as a trimesh `StaticBody3D`.
 - Writes `assets/maps/*.glb`, `assets/drones/*.glb`, `assets/pilot/pilot.glb`, `assets/maps/manifest.json` and `assets/credits.json`.
 
@@ -74,16 +76,32 @@ Per-map tuning lives in `MAP_OVERRIDES` in `tools/process_models.py`:
 |---|---|---|
 | Eze Village | `scale 0.01`, skybox mesh dropped | The photogrammetry is authored about 100× too large. The game draws its own sky. |
 | New York City Manhattan | `scale 250` | The source is an 8 × 11 m miniature. |
-| Cathedral | no visual decimation, collision voxel-remeshed at 0.35 m | It is voxel art: edge-collapse decimation shatters the cubes. |
+| Cathedral | 12 m chunks, no LOD1/LOD2, collision voxel-remeshed at 0.35 m | It is voxel art: decimation shatters the cubes. |
 
-Other override keys: `spawn: [x, y, z]` (pilot position), `visual_tris`, `collision_collapse`, `collision_voxel`.
+Other override keys:
+- `spawn: [x, y, z]`: pilot position.
+- `chunk_size`, `lods`, `visual_tris`, `collision_collapse`, `collision_voxel`.
 
-Current per-map budgets (visual / collision triangles):
-- Cathedral: 1.01M / 393k
-- Eze Village: 300k / 60k
-- New York City Manhattan: 337k / 225k
+## LOD and graphics quality
 
-The cathedral is the heaviest on Quest, so check its frame rate on the headset first.
+Choose **Graphics** in the menu or the pause menu.
+
+| Preset | LOD switch distance | View distance | MSAA | Render scale |
+|---|---|---|---|---|
+| Low (Quest 2) | ×0.6 | 700 m | off | 0.8 |
+| Medium (Quest 3S) | ×1.0 (LOD1 from 250 m+, LOD2 from 625 m+) | 1500 m | 2× | 1.0 |
+| High (PC VR) | ×2.0 | 4000 m | 4× | 1.0 |
+
+`MapLod` swaps the chunk LODs by distance using visibility ranges. Depth fog hides the view-distance cut-off.
+`tests/lod_stats.gd` prints rendered triangles per preset. With the Medium preset, Manhattan renders about 95k triangles in a typical view, against 337k in the full map.
+
+Note on Manhattan: its source has one 1024×1024 photo atlas for the whole city, about 0.12 texture pixels per metre.
+To make up for it, the map turns on `facade_detail`.
+- `shaders/facade_detail.gdshader` keeps the photo texture as the base colour.
+- It draws a procedural window grid on vertical walls: 3.6 m storeys and 3.2 m bays, varied per facade.
+- The grid fades out between 120 and 450 m.
+
+To enable it on another low-resolution map, add `"facade_detail": True` to that map's entry in `MAP_OVERRIDES`.
 
 ## Quest 3S export
 
@@ -107,4 +125,5 @@ flatpak run --filesystem=$PWD org.godotengine.Godot --headless --path . --script
 
 - `run_tests.gd` holds the unit tests (flight math, attribution parsing, drone catalog, view rules) and a physics integration test.
 - `smoke_main.gd` loads every map with every drone, cycles all views, pauses, resets and returns to the menu.
-- `screenshot_maps.gd` needs a window (no `--headless`). It saves `shot_<map>_<view>.png` screenshots to the user data folder.
+- `screenshot_maps.gd` needs a window (no `--headless`). It saves `shot_<map>_<view>.png` and `shot_<map>_rc.png` (the flyer view looking down at the RC) to the user data folder.
+- `lod_stats.gd` needs a window. It prints triangles and draw calls per quality preset.

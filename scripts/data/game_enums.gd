@@ -14,11 +14,12 @@ const QUALITY_NAMES := {
 ## Per-preset LOD / performance settings.
 ##   lod_threshold: Viewport.mesh_lod_threshold in pixels (higher = coarser LODs sooner)
 ##   view_distance: metres; map chunks beyond it are culled and hidden by fog
+##   lod_distance: multiplier on the map chunk LOD switch distances
 ##   msaa: Viewport.MSAA_* ; render_scale: OpenXR render target multiplier
 const QUALITY_SETTINGS := {
-	Quality.LOW: {"lod_threshold": 6.0, "view_distance": 700.0, "msaa": 0, "render_scale": 0.8},
-	Quality.MEDIUM: {"lod_threshold": 2.5, "view_distance": 1500.0, "msaa": 1, "render_scale": 1.0},
-	Quality.HIGH: {"lod_threshold": 1.0, "view_distance": 4000.0, "msaa": 2, "render_scale": 1.0},
+	Quality.LOW: {"lod_threshold": 6.0, "lod_distance": 0.6, "view_distance": 700.0, "msaa": 0, "render_scale": 0.8},
+	Quality.MEDIUM: {"lod_threshold": 2.5, "lod_distance": 1.0, "view_distance": 1500.0, "msaa": 1, "render_scale": 1.0},
+	Quality.HIGH: {"lod_threshold": 1.0, "lod_distance": 2.0, "view_distance": 4000.0, "msaa": 2, "render_scale": 1.0},
 }
 
 const VIEW_NAMES := {

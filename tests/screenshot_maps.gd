@@ -34,7 +34,6 @@ func _run() -> void:
 		rig._desktop_yaw = deg_to_rad(120)
 		rig._desktop_pitch = deg_to_rad(-55)
 		await _shot(id + "_rc")
-		print("%s cam yaw %.1f body yaw %.1f rig yaw %.1f" % [id, rad_to_deg(FlightMath.basis_yaw(rig.camera.transform.basis)), rad_to_deg(FlightMath.basis_yaw(rig.pilot_body.transform.basis)), rad_to_deg(FlightMath.basis_yaw(rig.global_basis))])
 		main._drone.global_position += Vector3(0, 30, 0)
 		for view in [GameEnums.ViewMode.THIRD_PERSON, GameEnums.ViewMode.FPV, GameEnums.ViewMode.FLYER]:
 			game.set_view_mode(view)

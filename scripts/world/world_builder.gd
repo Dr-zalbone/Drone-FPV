@@ -180,6 +180,14 @@ static func open_yaw(space: PhysicsDirectSpaceState3D, eye: Vector3, reach := 60
 		var dir := Basis(Vector3.UP, yaw) * Vector3.FORWARD
 		var hit := _ray(space, eye, eye + dir * reach)
 		var free := reach if hit.is_empty() else eye.distance_to(hit.position)
+		# "Open" must not mean "off the edge of the scanned map": need ground
+		# under points ahead in that direction.
+		var grounded := 0
+		for d: float in [reach * 0.25, reach * 0.5, reach]:
+			var probe := eye + dir * minf(d, free - 0.5)
+			if not _ray(space, probe + Vector3(0, 50, 0), probe - Vector3(0, 300, 0)).is_empty():
+				grounded += 1
+		free *= grounded / 3.0
 		if free > best_free + 0.01:
 			best_free = free
 			best_yaw = yaw

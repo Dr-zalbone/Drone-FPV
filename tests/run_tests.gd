@@ -23,6 +23,8 @@ func _run() -> void:
 	_test_game_views()
 	_test_quality()
 	_test_pilot_body()
+	_test_map_lod()
+	_test_facade_detail()
 	await _test_drone_physics()
 	print("\nRESULT: %d passed, %d failed" % [_passed, _failed])
 	quit(1 if _failed > 0 else 0)
@@ -162,6 +164,40 @@ func _test_pilot_body() -> void:
 	check(to_rc.dot(-head.global_basis.z) > 0.9, "RC is where you look when looking down (%.2f)" % to_rc.dot(-head.global_basis.z))
 	body.queue_free()
 	head.queue_free()
+
+
+func _test_map_lod() -> void:
+	check(MapLod.parse_name("nyc_chunk_3_4_lod2") == ["nyc_chunk_3_4", 2], "parse lod name")
+	check(MapLod.parse_name("Ground")[1] == -1, "non-lod node")
+	var sw := MapLod.switch_distances(186.0, 1.0)
+	check(near(sw[0], 558.0) and near(sw[1], 1395.0), "switch distances %s" % [sw])
+	check(MapLod.switch_distances(10.0, 1.0)[0] == MapLod.MIN_SWITCH, "min switch distance")
+	check(MapLod.switch_distances(186.0, 0.6)[0] < sw[0], "low quality switches sooner")
+	var r0 := MapLod.range_for(0, 2, sw, 1500.0, 50.0)
+	var r1 := MapLod.range_for(1, 2, sw, 1500.0, 50.0)
+	var r2 := MapLod.range_for(2, 2, sw, 1500.0, 50.0)
+	check(r0 == Vector2(0, sw[0]) and r1 == Vector2(sw[0], sw[1]) and r2 == Vector2(sw[1], 1550.0), "contiguous ranges")
+	check(MapLod.range_for(0, 0, sw, 1500.0, 50.0) == Vector2(0, 1550.0), "single-LOD chunk spans to view distance")
+
+
+func _test_facade_detail() -> void:
+	var root_node := Node3D.new()
+	var textured := StandardMaterial3D.new()
+	textured.albedo_texture = ImageTexture.create_from_image(Image.create(4, 4, false, Image.FORMAT_RGBA8))
+	var plain := StandardMaterial3D.new()
+	for mat in [textured, textured, plain]:
+		var mi := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.material = mat
+		mi.mesh = box
+		root_node.add_child(mi)
+	check(FacadeDetail.apply(root_node) == 2, "only textured surfaces converted")
+	var a := (root_node.get_child(0) as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial
+	var b := (root_node.get_child(1) as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial
+	check(a != null and a == b, "converted material shared")
+	check(a.get_shader_parameter(&"albedo_tex") == textured.albedo_texture, "keeps original texture")
+	check((root_node.get_child(2) as MeshInstance3D).get_surface_override_material(0) == null, "untextured untouched")
+	root_node.free()
 
 
 ## Integration: drone hovers, climbs and moves forward in a real physics world.

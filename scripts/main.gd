@@ -106,13 +106,14 @@ func _on_xr_recentered() -> void:
 # --------------------------------------------------------------------------
 # Quality / LOD
 # --------------------------------------------------------------------------
-## LOD system:
+## LOD system (see MapLod):
 ## 1. Maps are split into spatial chunks by tools/process_models.py, so each
 ##    chunk is frustum-culled on its own.
-## 2. Godot's automatic mesh LODs (generated at import) are picked per chunk
-##    from its screen-space size; mesh_lod_threshold sets how aggressive.
-## 3. Chunks beyond the preset's view distance are culled (visibility range)
-##    and depth fog hides the cut-off.
+## 2. Each chunk has LOD0 (original), LOD1 (50 %) and LOD2 (20 %) meshes,
+##    swapped by distance with visibility ranges scaled by the preset.
+## 3. Chunks beyond the preset's view distance are culled and depth fog
+##    hides the cut-off. mesh_lod_threshold drives Godot's auto-LOD on
+##    everything else (drones, props).
 func _apply_quality() -> void:
 	var q := Game.quality_settings()
 	var vp := get_viewport()
@@ -132,13 +133,8 @@ func _apply_quality() -> void:
 		_env.fog_depth_curve = 1.5
 		_env.fog_sky_affect = 0.0
 	if _map:
-		for node in _map.find_children("*", "GeometryInstance3D", true, false):
-			var gi := node as GeometryInstance3D
-			var radius := 0.0
-			if gi is VisualInstance3D:
-				radius = (gi as VisualInstance3D).get_aabb().size.length() * 0.5
-			gi.visibility_range_end = dist + radius
-			gi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+		var cell: float = Game.current_map().get("chunk_size", 64.0)
+		MapLod.apply(_map, cell, q.lod_distance, dist)
 
 
 # --------------------------------------------------------------------------
@@ -205,6 +201,8 @@ func _finish_loading(map: Node3D, entry: Dictionary) -> void:
 		_lobby = null
 	_map = map
 	_map.name = "Map"
+	if entry.get("facade_detail", false):
+		FacadeDetail.apply(_map)
 	_world.add_child(_map)
 	# Let the physics server register the new collision shapes.
 	await get_tree().physics_frame
