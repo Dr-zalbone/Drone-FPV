@@ -1,0 +1,26 @@
+[
+  {
+    "kind": "map",
+    "id": "cathedral",
+    "title": "Cathedral",
+    "author": "patrix",
+    "site": "Sketchfab",
+    "source_file": "cathedral_attribution-patrix_on_sketchfab.glb"
+  },
+  {
+    "kind": "map",
+    "id": "eze_village_france",
+    "title": "Eze Village - France",
+    "author": "Azad Balabanian",
+    "site": "Sketchfab",
+    "source_file": "eze_village_-_france_attribution-Azad_Balabanian_on_sketchfab.glb"
+  },
+  {
+    "kind": "map",
+    "id": "new_york_city_manhattan",
+    "title": "New York City Manhattan",
+    "author": "truekit",
+    "site": "Sketchfab",
+    "source_file": "new_york_city._manhattan_attribiution-truekit_on_sketchfab.glb"
+  }
+]

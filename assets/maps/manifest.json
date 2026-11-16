@@ -1,0 +1,65 @@
+[
+  {
+    "id": "cathedral",
+    "title": "Cathedral",
+    "scene": "res://assets/maps/cathedral.glb",
+    "bounds": {
+      "min": [
+        -15.747098922729492,
+        -20.21997833251953,
+        -18.670814514160156
+      ],
+      "max": [
+        15.747098922729492,
+        25.071685791015625,
+        18.822284698486328
+      ]
+    },
+    "visual_tris": 1013732,
+    "collision_tris": 393132,
+    "chunks": 2,
+    "lods": false
+  },
+  {
+    "id": "eze_village_france",
+    "title": "Eze Village - France",
+    "scene": "res://assets/maps/eze_village_france.glb",
+    "bounds": {
+      "min": [
+        -380.2102966308594,
+        -108.59501647949219,
+        -295.8264465332031
+      ],
+      "max": [
+        255.4830322265625,
+        154.311279296875,
+        257.58782958984375
+      ]
+    },
+    "visual_tris": 299980,
+    "collision_tris": 60000,
+    "chunks": 53,
+    "lods": true
+  },
+  {
+    "id": "new_york_city_manhattan",
+    "title": "New York City Manhattan",
+    "scene": "res://assets/maps/new_york_city_manhattan.glb",
+    "bounds": {
+      "min": [
+        -975.3317260742188,
+        -415.6585998535156,
+        -1501.0172119140625
+      ],
+      "max": [
+        1042.7103271484375,
+        141.16107177734375,
+        1480.7900390625
+      ]
+    },
+    "visual_tris": 336554,
+    "collision_tris": 225009,
+    "chunks": 39,
+    "lods": true
+  }
+]
