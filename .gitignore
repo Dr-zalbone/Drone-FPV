@@ -2,3 +2,15 @@
 .godot/
 /android/
 /build/
+
+# Raw source models stay out of git. Re-download them with tools/fetch_sources.py.
+/*.glb
+/*.gltf
+/*.fbx
+/*.obj
+/*.png
+/*.jpg
+/*.jpeg
+/*.import
+!/icon.svg.import
+/*_on_sketchfab/
