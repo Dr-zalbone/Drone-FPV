@@ -2,26 +2,26 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dq5e4px86ef8e"
-path.s3tc="res://.godot/imported/cathedral_Image_0.jpg-879ef9a673464585f5f0c1879294669c.s3tc.ctex"
-path.etc2="res://.godot/imported/cathedral_Image_0.jpg-879ef9a673464585f5f0c1879294669c.etc2.ctex"
+uid="uid://b308rv5giw8ha"
+path.bptc="res://.godot/imported/lakeside_exterior_scene_landscape_5.webp-b88e810925d70fb41993fefb20f45298.bptc.ctex"
+path.astc="res://.godot/imported/lakeside_exterior_scene_landscape_5.webp-b88e810925d70fb41993fefb20f45298.astc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "85e49914264216155fc697928e956a87"
+"md5": "05ca95c9b9c795d0048179040ee1da98"
 }
 
 [deps]
 
-source_file="res://assets/maps/cathedral_Image_0.jpg"
-dest_files=["res://.godot/imported/cathedral_Image_0.jpg-879ef9a673464585f5f0c1879294669c.s3tc.ctex", "res://.godot/imported/cathedral_Image_0.jpg-879ef9a673464585f5f0c1879294669c.etc2.ctex"]
+source_file="res://assets/maps/lakeside_exterior_scene_landscape_5.webp"
+dest_files=["res://.godot/imported/lakeside_exterior_scene_landscape_5.webp-b88e810925d70fb41993fefb20f45298.bptc.ctex", "res://.godot/imported/lakeside_exterior_scene_landscape_5.webp-b88e810925d70fb41993fefb20f45298.astc.ctex"]
 
 [params]
 
 compress/mode=2
-compress/high_quality=false
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0

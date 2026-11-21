@@ -2,8 +2,9 @@
 """Download the raw Sketchfab source models listed in tools/sources.json.
 
 Raw sources are not stored in git (they are large and can be re-downloaded).
-They land in the project root under their attribution file names, ready for
-tools/process_models.sh.
+Each lands in the project root as a folder named after its attribution stem
+(<title>_attribution-<author>_on_sketchfab/scene.gltf + textures), with a
+.gdignore so Godot skips it, ready for tools/process_models.sh.
 
 Needs a Sketchfab API token (free accounts work) in the SKETCHFAB_API_TOKEN
 environment variable: sketchfab.com -> Settings -> Password & API.
@@ -65,21 +66,25 @@ def main() -> None:
         if check_only:
             print(f"ok   {e['file']}  (formats: {kinds})")
             continue
-        if dest.exists():
+        # The glTF zip carries the ORIGINAL textures (e.g. 4096 px); Sketchfab's
+        # "glb" download is a downscaled 1024 px version. Prefer the zip and
+        # keep it as a folder named after the attribution stem.
+        folder = dest.with_suffix("")
+        if folder.is_dir() or dest.exists():
             print(f"skip {e['file']} (already present)")
             continue
-        if "glb" in links:
-            print(f"get  {e['file']} (glb, {links['glb'].get('size', 0) >> 20} MB)")
-            fetch(links["glb"]["url"], dest)
-        elif "gltf" in links:
-            # The glTF zip has scene.gltf + scene.bin + textures; keep it as a folder.
-            folder = dest.with_suffix("")
+        if "gltf" in links:
             print(f"get  {folder.name}/ (gltf zip, {links['gltf'].get('size', 0) >> 20} MB)")
             with tempfile.TemporaryDirectory() as tmp:
                 zpath = pathlib.Path(tmp) / "model.zip"
                 fetch(links["gltf"]["url"], zpath)
                 with zipfile.ZipFile(zpath) as z:
                     z.extractall(folder)
+            # Godot must not import the raw source (slow, and it would ship in the APK).
+            (folder / ".gdignore").write_text("", encoding="utf-8")
+        elif "glb" in links:
+            print(f"get  {e['file']} (glb, {links['glb'].get('size', 0) >> 20} MB)")
+            fetch(links["glb"]["url"], dest)
         else:
             print(f"FAIL {e['file']}: no glb/gltf download (formats: {kinds})")
 

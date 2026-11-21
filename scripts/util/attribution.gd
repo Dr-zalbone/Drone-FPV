@@ -31,4 +31,7 @@ static func prettify(text: String) -> String:
 
 
 static func format_line(entry: Dictionary) -> String:
-	return "\"%s\" by %s (%s)" % [entry.get("title", "?"), entry.get("author", "?"), entry.get("site", "?")]
+	var line := "\"%s\" by %s (%s)" % [entry.get("title", "?"), entry.get("author", "?"), entry.get("site", "?")]
+	if entry.get("license", "") != "":
+		line += ", " + entry.license
+	return line

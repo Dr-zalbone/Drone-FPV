@@ -126,7 +126,7 @@ func _apply_quality() -> void:
 	if _env:
 		_env.fog_enabled = _map != null
 		_env.fog_mode = Environment.FOG_MODE_DEPTH
-		_env.fog_light_color = Color(0.72, 0.8, 0.9)
+		_env.fog_light_color = WorldBuilder.FOG_COLOR
 		_env.fog_density = 1.0
 		_env.fog_depth_begin = dist * 0.55
 		_env.fog_depth_end = dist
@@ -162,7 +162,7 @@ func _start_game() -> void:
 	state = State.LOADING
 	_loading_path = entry.get("scene", "")
 	if _loading_path == "":
-		_finish_loading.call_deferred(WorldBuilder.make_test_field(), entry)
+		_finish_loading.call_deferred(TestField.build(), entry)
 		return
 	var err := ResourceLoader.load_threaded_request(_loading_path, "PackedScene", true)
 	if err != OK:
@@ -203,6 +203,8 @@ func _finish_loading(map: Node3D, entry: Dictionary) -> void:
 	_map.name = "Map"
 	if entry.get("facade_detail", false):
 		FacadeDetail.apply(_map)
+	elif entry.get("unshaded", false):
+		MapDressing.make_unshaded(_map)
 	_world.add_child(_map)
 	# Let the physics server register the new collision shapes.
 	await get_tree().physics_frame
@@ -210,17 +212,27 @@ func _finish_loading(map: Node3D, entry: Dictionary) -> void:
 
 	var bounds := WorldBuilder.visual_bounds(_map)
 	var space := get_world_3d().direct_space_state
+	# Both use raycasts, so they run before the (infinite) surround plane exists.
+	var surround_y := MapDressing.surround_level(space, bounds) if entry.has("surround") else 0.0
 	var pilot_xf: Transform3D
-	if entry.has("spawn"):
+	if _map.has_meta(&"spawn"):
+		pilot_xf = _map.get_meta(&"spawn")
+	elif entry.has("spawn"):
 		var s: Array = entry.spawn
 		var at := Vector3(s[0], s[1], s[2])
 		pilot_xf = Transform3D(Basis(Vector3.UP, WorldBuilder.open_yaw(space, at + Vector3(0, 1.6, 0))), at)
 	else:
 		pilot_xf = WorldBuilder.find_pilot_spawn(space, bounds)
+	if entry.has("surround"):
+		var radius := Vector2(bounds.size.x, bounds.size.z).length() + 5000.0
+		_map.add_child(MapDressing.make_surround(entry.surround, surround_y, bounds.get_center(), radius))
+		await get_tree().physics_frame
 
 	var spec := Game.drone_spec()
-	# Drone sits on the ground a few metres in front of the pilot (-Z).
-	var ahead := pilot_xf.origin + pilot_xf.basis * Vector3(0, 0, -(2.0 + spec.span * 1.5))
+	# Drone sits on the ground a few metres in front of the pilot (-Z), on the
+	# flat pad the spawn search checked.
+	var ahead_dist := minf(2.0 + spec.span * 1.5, WorldBuilder.DRONE_PAD_AHEAD)
+	var ahead := pilot_xf.origin + pilot_xf.basis * Vector3(0, 0, -ahead_dist)
 	var hit := WorldBuilder.ground_at(space, ahead + Vector3(0, 5, 0), bounds.position.y - 20.0)
 	var ground_y: float = hit.position.y if not hit.is_empty() else pilot_xf.origin.y
 	var drone_xf := Transform3D(pilot_xf.basis, Vector3(ahead.x, ground_y + spec.body_size.y * 0.5 + 0.05, ahead.z))

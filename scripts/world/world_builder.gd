@@ -3,14 +3,18 @@ extends RefCounted
 ## Environment, lobby, built-in test field, spawn finding and the pilot figure.
 
 const WORLD_MASK := 1
+## Depth fog colour; also the sky's horizon and below-horizon colour.
+const FOG_COLOR := Color(0.72, 0.8, 0.9)
 
 
 static func make_environment() -> Array[Node]:
 	var sky_mat := ProceduralSkyMaterial.new()
 	sky_mat.sky_top_color = Color(0.32, 0.52, 0.85)
 	sky_mat.sky_horizon_color = Color(0.72, 0.8, 0.9)
-	sky_mat.ground_horizon_color = Color(0.6, 0.62, 0.65)
-	sky_mat.ground_bottom_color = Color(0.25, 0.25, 0.27)
+	# Below the horizon the sky shows past the camera's far plane (beyond the
+	# fogged map / surround plane), so it uses the fog colour: no grey band.
+	sky_mat.ground_horizon_color = FOG_COLOR
+	sky_mat.ground_bottom_color = FOG_COLOR
 	var sky := Sky.new()
 	sky.sky_material = sky_mat
 	sky.radiance_size = Sky.RADIANCE_SIZE_64
@@ -140,20 +144,38 @@ static func visual_bounds(root: Node3D) -> AABB:
 	return result
 
 
-## Picks a pilot standing spot: the lowest walkable surface with open sky
-## above it near the middle of the map (streets / plazas rather than rooftops
-## or overhangs), facing the most open horizontal direction.
+## Spawn scoring weights (see spawn_score).
+const SPAWN_HEIGHT_WEIGHT := 0.45
+const SPAWN_VIEW_WEIGHT := 0.45
+const SPAWN_CENTER_WEIGHT := 0.25
+## Distance (m) the pilot's view is measured over.
+const SPAWN_VIEW_REACH := 150.0
+## Flat pad for the drone: this far ahead of the pilot, within this height step.
+const DRONE_PAD_AHEAD := 4.0
+const DRONE_PAD_MAX_STEP := 1.0
+
+
+## Score for one pilot spot; all inputs are 0..1 (higher score = better).
+## A raised spot with a wide open view near the middle of the map is a
+## "lookout": the flight starts above the scenery, not buried in it.
+static func spawn_score(height_norm: float, openness: float, center_dist_norm: float) -> float:
+	return (SPAWN_HEIGHT_WEIGHT * height_norm + SPAWN_VIEW_WEIGHT * openness
+		- SPAWN_CENTER_WEIGHT * center_dist_norm)
+
+
+## Picks a pilot standing spot: a flat lookout with open sky above, a wide
+## view and a drone pad in front, near the middle of the map. Faces the most
+## open direction that has a pad.
 static func find_pilot_spawn(space: PhysicsDirectSpaceState3D, bounds: AABB) -> Transform3D:
 	var center := bounds.get_center()
 	var top := bounds.end.y + 20.0
 	var bottom := bounds.position.y - 20.0
-	var best := Vector3(center.x, bounds.position.y, center.z)
-	var best_score := INF
-	var steps := 11
+	var spots: Array[Vector3] = []
+	var steps := 15
 	for ix in steps:
 		for iz in steps:
-			var fx := lerpf(0.2, 0.8, ix / float(steps - 1))
-			var fz := lerpf(0.2, 0.8, iz / float(steps - 1))
+			var fx := lerpf(0.15, 0.85, ix / float(steps - 1))
+			var fz := lerpf(0.15, 0.85, iz / float(steps - 1))
 			var x := bounds.position.x + bounds.size.x * fx
 			var z := bounds.position.z + bounds.size.z * fz
 			var hit := ground_at(space, Vector3(x, top, z), bottom)
@@ -164,11 +186,72 @@ static func find_pilot_spawn(space: PhysicsDirectSpaceState3D, bounds: AABB) -> 
 			# the downward ray slip through from above).
 			if not _ray(space, p + Vector3(0, 0.3, 0), p + Vector3(0, 300, 0)).is_empty():
 				continue
-			var score: float = p.y + Vector2(x - center.x, z - center.z).length() * 0.02
-			if score < best_score:
-				best_score = score
-				best = p
-	return Transform3D(Basis(Vector3.UP, open_yaw(space, best + Vector3(0, 1.6, 0))), best)
+			spots.append(p)
+	if spots.is_empty():
+		var fallback := Vector3(center.x, bounds.position.y, center.z)
+		return Transform3D(Basis(Vector3.UP, open_yaw(space, fallback + Vector3(0, 1.6, 0))), fallback)
+	var lo := INF
+	var hi := -INF
+	for p in spots:
+		lo = minf(lo, p.y)
+		hi = maxf(hi, p.y)
+	var half_diag := maxf(Vector2(bounds.size.x, bounds.size.z).length() * 0.5, 1.0)
+	var best := spots[0]
+	var best_yaw := 0.0
+	var best_score := -INF
+	for p in spots:
+		var view := view_openness(space, p + Vector3(0, 1.6, 0), center)
+		if view.y < 0.0:
+			continue  # nowhere to put the drone
+		var score := spawn_score(
+			(p.y - lo) / maxf(hi - lo, 0.01), view.x,
+			Vector2(p.x - center.x, p.z - center.z).length() / half_diag)
+		if score > best_score:
+			best_score = score
+			best = p
+			best_yaw = view.y
+	if best_score == -INF:
+		best_yaw = open_yaw(space, best + Vector3(0, 1.6, 0))
+	return Transform3D(Basis(Vector3.UP, best_yaw), best)
+
+
+## Returns Vector2(openness 0..1, yaw to face), or yaw = -1 when no direction
+## has a flat drone pad ahead. The facing is open AND looks towards `center`
+## (the scenery): "open" alone would also mean staring at empty space past
+## the edge of the map.
+static func view_openness(space: PhysicsDirectSpaceState3D, eye: Vector3, center: Vector3) -> Vector2:
+	var total := 0.0
+	var best_yaw := -1.0
+	var best_value := -INF
+	var to_center := Vector3(center.x - eye.x, 0, center.z - eye.z)
+	var has_center := to_center.length() > 5.0
+	to_center = to_center.normalized() if has_center else Vector3.ZERO
+	var dirs := 12
+	for i in dirs:
+		var yaw := i * TAU / dirs
+		var dir := Basis(Vector3.UP, yaw) * Vector3.FORWARD
+		var hit := _ray(space, eye, eye + dir * SPAWN_VIEW_REACH)
+		var free := SPAWN_VIEW_REACH if hit.is_empty() else eye.distance_to(hit.position)
+		total += free
+		var value := facing_value(free / SPAWN_VIEW_REACH, dir.dot(to_center))
+		if value > best_value and has_drone_pad(space, eye - Vector3(0, 1.6, 0), dir):
+			best_value = value
+			best_yaw = yaw
+	return Vector2(total / (dirs * SPAWN_VIEW_REACH), best_yaw)
+
+
+## How good a facing direction is: open view (0..1) and looking towards the
+## middle of the map (dot -1..1; 0 when the spot is at the middle).
+static func facing_value(openness: float, center_dot: float) -> float:
+	return 0.5 * openness + 0.5 * maxf(center_dot, 0.0)
+
+
+## Flat ground DRONE_PAD_AHEAD metres ahead of `feet` (not off a roof edge).
+static func has_drone_pad(space: PhysicsDirectSpaceState3D, feet: Vector3, dir: Vector3) -> bool:
+	var at := feet + dir * DRONE_PAD_AHEAD
+	var hit := ground_at(space, at + Vector3(0, 3, 0), feet.y - 10.0)
+	return not hit.is_empty() and absf((hit.position as Vector3).y - feet.y) <= DRONE_PAD_MAX_STEP \
+		and (hit.normal as Vector3).y > 0.8
 
 
 ## Yaw (around +Y, 0 = -Z) of the horizontal direction with the most free space.

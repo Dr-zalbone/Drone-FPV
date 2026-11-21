@@ -10,7 +10,7 @@ func _run() -> void:
 	var game: Node = root.get_node("Game")
 	var main: Node = (load("res://scenes/main.tscn") as PackedScene).instantiate()
 	root.add_child(main)
-	for m in game.maps.size() - 1:
+	for m in game.maps.size():
 		game.selected_map = m
 		game.view_mode = GameEnums.ViewMode.THIRD_PERSON
 		main._start_game()

@@ -6,7 +6,9 @@ Run through tools/process_models.sh (it calls Blender in background mode):
     blender --background --factory-startup --python tools/process_models.py -- <project_root>
 
 For every *.glb / *.gltf / *.fbx / *.obj in the project root whose file name
-carries an attribution ("<title>_attribution-<author>_on_<site>.<ext>"):
+carries an attribution ("<title>_attribution-<author>_on_<site>.<ext>"), and
+every root folder named that way holding a *.gltf (tools/fetch_sources.py
+downloads Sketchfab's full-resolution glTF zips into such folders):
 
 * maps   -> assets/maps/<id>.glb  (decimated visual + "-colonly" collision mesh)
 * drones -> assets/drones/<drone_id>.glb  (file name contains flycart / fpv / mini)
@@ -42,6 +44,12 @@ CHUNK_MIN_SIZE = 48.0
 # The game swaps them by distance (visibility ranges), see main.gd _apply_quality.
 LOD_RATIOS = (0.5, 0.2)
 LOD_MIN_TRIS = 400  # smaller chunks only get LOD0
+# Map textures: originals up to this size (4096 = ASTC 4x4 ~21 MB with mips on
+# Quest), exported as lossy WebP to keep the repo small. Godot re-compresses to
+# VRAM formats on import anyway, so WebP's loss is not visible in game.
+MAP_TEXTURE_MAX = 4096
+MAP_IMAGE_FORMAT = "WEBP"
+MAP_IMAGE_QUALITY = 90
 DRONE_VISUAL_TRIS = 25_000
 DRONE_TEXTURE_MAX = 1024
 PILOT_VISUAL_TRIS = 15_000
@@ -60,19 +68,29 @@ PILOT_KEYWORDS = ("pilot", "flyer", "person", "man_", "human", "character")
 # Per-map tweaks (keyed by map id).
 #   scale: uniform scale baked into the exported meshes (source units -> metres)
 #   spawn: optional [x, y, z] pilot position in Godot coordinates (after scale)
-# Other keys are copied to the manifest as-is.
+#   visual_dissolve: merge coplanar faces of the visual mesh (voxel art),
+#       keeping UV islands and materials intact
+# Other keys are copied to the manifest as-is. The game reads:
+#   unshaded: photogrammetry with lighting baked into the photos; skips
+#       real-time lighting (cheaper, and avoids lighting it twice)
+#   surround: "sea" or "ground" plane filling the void around the map
+#   facade_detail: procedural window grid (shaders/facade_detail.gdshader)
 MAP_OVERRIDES = {
-    # Photogrammetry chunks are authored ~100x too large.
-    "eze_village_france": {"scale": 0.01},
-    # Voxel model: collapse decimation shatters cubes, keep full detail
-    # (33 chunks -> frustum culling + Godot auto-LOD keep it affordable).
-    # Decimated LODs would shatter the cubes too, so it only gets fine chunks
-    # (culling + view-distance) and no LOD1/LOD2.
-    "cathedral": {"collision_collapse": False, "collision_voxel": 0.35, "lods": False, "chunk_size": 12.0},
+    # Photogrammetry chunks are authored ~100x too large. Coastal village.
+    "eze_village_france": {"scale": 0.01, "unshaded": True, "surround": "sea"},
+    # Voxel model: collapse decimation shatters cubes, so no LOD1/LOD2. A
+    # planar dissolve merges each flat run of same-coloured cube faces into
+    # one polygon instead, which is lossless for voxel art.
+    "cathedral": {"collision_collapse": False, "collision_voxel": 0.35, "lods": False, "chunk_size": 12.0,
+                  "visual_dissolve": True, "surround": "ground"},
     # Miniature city (~8 x 11 units); x250 puts the tallest towers near 500 m.
-    # Its single 1024 px atlas is ~0.12 px/m, so the game adds procedural
-    # window detail (shaders/facade_detail.gdshader).
-    "new_york_city_manhattan": {"scale": 250.0, "facade_detail": True},
+    # Its single 4096 px atlas is ~0.5 px/m, so the game adds procedural
+    # window detail (shaders/facade_detail.gdshader). Manhattan is an island.
+    "new_york_city_manhattan": {"scale": 250.0, "facade_detail": True, "surround": "sea"},
+    # Island in a square lake: open water past the lake's edge hides the square.
+    # Only ~200 m across, so distance LODs never kick in: five 120k-tri rocks
+    # alone are 600k tris. Decimate the heavy meshes to fit a Quest budget.
+    "lakeside_exterior_scene": {"surround": "sea", "visual_tris": 300_000},
 }
 
 # Objects we never keep (we render our own sky).
@@ -128,9 +146,13 @@ def import_model(path):
         bpy.ops.import_scene.fbx(filepath=path)
     elif ext == ".obj":
         bpy.ops.wm.obj_import(filepath=path)
-    # Sketchfab exports often carry cameras and lights we do not want.
+    # Sketchfab exports often carry cameras and lights we do not want, and
+    # sky domes (found by object OR material name, e.g. "Sphere" + "skydome").
     for obj in list(bpy.context.scene.objects):
-        if obj.type in {"CAMERA", "LIGHT"} or any(k in obj.name.lower() for k in DROP_OBJECT_KEYWORDS):
+        names = [obj.name.lower()]
+        if obj.type == "MESH":
+            names += [m.name.lower() for m in obj.data.materials if m]
+        if obj.type in {"CAMERA", "LIGHT"} or any(k in n for n in names for k in DROP_OBJECT_KEYWORDS):
             bpy.data.objects.remove(obj, do_unlink=True)
     # Drop empty meshes (points / lines only).
     for obj in list(bpy.context.scene.objects):
@@ -176,12 +198,27 @@ def apply_decimate(obj, ratio):
         bpy.data.meshes.remove(old)
 
 
-def apply_planar_dissolve(obj, angle_deg=1.0):
-    """Lossless-ish: merge coplanar faces (great for voxel / boxy buildings)."""
+def merge_by_distance(obj, dist):
+    if obj.data.users > 1:
+        obj.data = obj.data.copy()
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=dist)
+    bm.to_mesh(obj.data)
+    bm.free()
+
+
+def apply_planar_dissolve(obj, angle_deg=1.0, delimit=None):
+    """Lossless-ish: merge coplanar faces (great for voxel / boxy buildings).
+    delimit={"UV", "MATERIAL"} keeps faces with different texture regions apart."""
+    if obj.data.users > 1:
+        obj.data = obj.data.copy()
     mod = obj.modifiers.new("planar", "DECIMATE")
     mod.decimate_type = "DISSOLVE"
     mod.angle_limit = math.radians(angle_deg)
     mod.use_dissolve_boundaries = False
+    if delimit:
+        mod.delimit = set(delimit)
     depsgraph = bpy.context.evaluated_depsgraph_get()
     new_mesh = bpy.data.meshes.new_from_object(obj.evaluated_get(depsgraph))
     old = obj.data
@@ -279,12 +316,23 @@ def chunk_visuals(objects, asset_id, cell_size=None, make_lods=True):
     return chunks, cell
 
 
+DECIMATE_MIN_OBJECT_TRIS = 20_000
+
+
 def decimate_to_budget(objects, budget):
+    """Collapse-decimate only the heavy meshes (>= DECIMATE_MIN_OBJECT_TRIS)
+    so the total meets the budget; small meshes such as alpha-card grass or
+    leaves would be ruined by decimation and cost little anyway."""
     total = sum(tri_count(o) for o in objects)
     if budget is None or total <= budget or total == 0:
         return total, total
-    ratio = budget / total
-    for obj in objects:
+    big = [o for o in objects if tri_count(o) >= DECIMATE_MIN_OBJECT_TRIS]
+    big_total = sum(tri_count(o) for o in big)
+    small_total = total - big_total
+    if big_total == 0:
+        return total, total
+    ratio = max(budget - small_total, big_total * 0.05) / big_total
+    for obj in big:
         apply_decimate(obj, ratio)
     return total, sum(tri_count(o) for o in objects)
 
@@ -371,19 +419,33 @@ def world_bounds(objects):
     }
 
 
-def export_glb(path):
+def export_glb(path, image_format="AUTO", image_quality=100):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     bpy.ops.export_scene.gltf(
         filepath=path,
         export_format="GLB",
         export_apply=True,
-        export_image_format="AUTO",
+        export_image_format=image_format,
         export_draco_mesh_compression_enable=False,  # Godot cannot read Draco
-        export_jpeg_quality=100,  # only used if an image must be re-encoded
+        export_image_quality=image_quality,
         export_animations=False,
         export_cameras=False,
         export_lights=False,
     )
+
+
+def find_sources(root):
+    """[(display_name, path_to_import)] for attributed files and folders in root."""
+    out = []
+    for name in sorted(os.listdir(root)):
+        path = os.path.join(root, name)
+        if os.path.isfile(path) and name.lower().endswith(SOURCE_EXTS):
+            out.append((name, path))
+        elif os.path.isdir(path) and parse_attribution(name):
+            gltfs = sorted(f for f in os.listdir(path) if f.lower().endswith((".gltf", ".glb")))
+            if gltfs:
+                out.append((name, os.path.join(path, gltfs[0])))
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -393,10 +455,14 @@ def process(root, only=None):
     assets = os.path.join(root, "assets")
     credits = []
     maps = []
-    sources = sorted(
-        f for f in os.listdir(root)
-        if f.lower().endswith(SOURCE_EXTS) and os.path.isfile(os.path.join(root, f))
-    )
+    found = find_sources(root)
+    paths = dict(found)
+    source_info = {}
+    sources_json = os.path.join(root, "tools", "sources.json")
+    if os.path.exists(sources_json):
+        with open(sources_json, encoding="utf-8") as fh:
+            source_info = {os.path.splitext(e["file"])[0]: e for e in json.load(fh)}
+    sources = [name for name, _ in found]
     previous = {}
     credits_path = os.path.join(assets, "credits.json")
     manifest_path = os.path.join(assets, "maps", "manifest.json")
@@ -412,7 +478,7 @@ def process(root, only=None):
         keep_ids = {c["id"] for c in credits if c.get("kind") == "map"}
         maps = [m for m in previous.get("maps", []) if m.get("id") in keep_ids]
     for filename in sources:
-        stem = os.path.splitext(filename)[0]
+        stem = filename if os.path.isdir(os.path.join(root, filename)) else os.path.splitext(filename)[0]
         attribution = parse_attribution(stem)
         if attribution is None:
             print(f"[skip] {filename}: no attribution in file name")
@@ -423,12 +489,22 @@ def process(root, only=None):
         print(f"[{kind}] {filename} -> {asset_id}")
 
         reset_scene()
-        import_model(os.path.join(root, filename))
+        import_model(paths[filename])
         objects = mesh_objects()
 
         if kind == "map":
             overrides = MAP_OVERRIDES.get(asset_id, {})
             apply_root_scale(float(overrides.get("scale", 1.0)))
+            if overrides.get("visual_dissolve"):
+                start = sum(tri_count(o) for o in objects)
+                for obj in objects:
+                    # Exported voxel faces do not share vertices, so every edge is a
+                    # boundary and nothing could merge. Weld first; UVs live on
+                    # face corners, so they survive, and real UV seams remain.
+                    merge_by_distance(obj, 0.0005)
+                    apply_planar_dissolve(obj, delimit={"UV", "MATERIAL"})
+                print(f"   visual planar dissolve: {start} -> {sum(tri_count(o) for o in objects)}")
+            downscale_textures(MAP_TEXTURE_MAX)
             before, after = decimate_to_budget(objects, overrides.get("visual_tris", MAP_VISUAL_TRIS))
             objects, cell = chunk_visuals(
                 objects, asset_id, overrides.get("chunk_size"), bool(overrides.get("lods", True)))
@@ -438,7 +514,7 @@ def process(root, only=None):
                 voxel=float(overrides.get("collision_voxel", 0.0)))
             bounds = world_bounds(objects)
             out = os.path.join(assets, "maps", f"{asset_id}.glb")
-            export_glb(out)
+            export_glb(out, MAP_IMAGE_FORMAT, MAP_IMAGE_QUALITY)
             print(f"   visual tris {before} -> {after}, collision tris {cb} -> {ca}")
             entry = {
                 "id": asset_id,
@@ -453,7 +529,7 @@ def process(root, only=None):
             }
             entry.update({k: v for k, v in overrides.items()
                           if k not in ("scale", "visual_tris", "collision_collapse", "collision_voxel",
-                                       "lods", "chunk_size")})
+                                       "lods", "chunk_size", "visual_dissolve")})
             maps.append(entry)
         else:
             budget = DRONE_VISUAL_TRIS if kind == "drone" else PILOT_VISUAL_TRIS
@@ -464,14 +540,19 @@ def process(root, only=None):
             export_glb(out)
             print(f"   visual tris {before} -> {after}")
 
-        credits.append({
+        credit = {
             "kind": kind,
             "id": asset_id,
             "title": attribution["title"],
             "author": attribution["author"],
             "site": attribution["site"],
             "source_file": filename,
-        })
+        }
+        # Licence and link from tools/sources.json (written by hand per model).
+        info = source_info.get(stem)
+        if info:
+            credit.update({"license": info.get("license", ""), "url": info.get("url", "")})
+        credits.append(credit)
 
     os.makedirs(os.path.join(assets, "maps"), exist_ok=True)
     order = {f: i for i, f in enumerate(sorted(os.listdir(root)))}

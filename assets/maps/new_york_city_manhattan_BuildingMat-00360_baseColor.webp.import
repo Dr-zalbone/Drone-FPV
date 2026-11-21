@@ -2,26 +2,26 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cgamxweni6smf"
-path.s3tc="res://.godot/imported/cathedral_Image_1.png-5c5dddf549a47441350738b0c32760d4.s3tc.ctex"
-path.etc2="res://.godot/imported/cathedral_Image_1.png-5c5dddf549a47441350738b0c32760d4.etc2.ctex"
+uid="uid://vx0220sodv8e"
+path.bptc="res://.godot/imported/new_york_city_manhattan_BuildingMat-00360_baseColor.webp-c3da94c676d16df76477e56f12d06623.bptc.ctex"
+path.astc="res://.godot/imported/new_york_city_manhattan_BuildingMat-00360_baseColor.webp-c3da94c676d16df76477e56f12d06623.astc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "e27b164876724da6f480294fcd164839"
+"md5": "3381208430e48fa5156d0e500e034837"
 }
 
 [deps]
 
-source_file="res://assets/maps/cathedral_Image_1.png"
-dest_files=["res://.godot/imported/cathedral_Image_1.png-5c5dddf549a47441350738b0c32760d4.s3tc.ctex", "res://.godot/imported/cathedral_Image_1.png-5c5dddf549a47441350738b0c32760d4.etc2.ctex"]
+source_file="res://assets/maps/new_york_city_manhattan_BuildingMat-00360_baseColor.webp"
+dest_files=["res://.godot/imported/new_york_city_manhattan_BuildingMat-00360_baseColor.webp-c3da94c676d16df76477e56f12d06623.bptc.ctex", "res://.godot/imported/new_york_city_manhattan_BuildingMat-00360_baseColor.webp-c3da94c676d16df76477e56f12d06623.astc.ctex"]
 
 [params]
 
 compress/mode=2
-compress/high_quality=false
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0

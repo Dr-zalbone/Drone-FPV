@@ -2,26 +2,26 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d32gxc6tr64lm"
-path.s3tc="res://.godot/imported/eze_village_france_Image_0.png-c19e0ae9675019765c55806d2ed6c0f1.s3tc.ctex"
-path.etc2="res://.godot/imported/eze_village_france_Image_0.png-c19e0ae9675019765c55806d2ed6c0f1.etc2.ctex"
+uid="uid://brrikqy35tskp"
+path.bptc="res://.godot/imported/lakeside_exterior_scene_landscape.webp-21ec35c188a13094f060ac331d086745.bptc.ctex"
+path.astc="res://.godot/imported/lakeside_exterior_scene_landscape.webp-21ec35c188a13094f060ac331d086745.astc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "e47b75f5cb77b444a602db03863620a0"
+"md5": "90c3ae64a3614b764e63d951bd660ad3"
 }
 
 [deps]
 
-source_file="res://assets/maps/eze_village_france_Image_0.png"
-dest_files=["res://.godot/imported/eze_village_france_Image_0.png-c19e0ae9675019765c55806d2ed6c0f1.s3tc.ctex", "res://.godot/imported/eze_village_france_Image_0.png-c19e0ae9675019765c55806d2ed6c0f1.etc2.ctex"]
+source_file="res://assets/maps/lakeside_exterior_scene_landscape.webp"
+dest_files=["res://.godot/imported/lakeside_exterior_scene_landscape.webp-21ec35c188a13094f060ac331d086745.bptc.ctex", "res://.godot/imported/lakeside_exterior_scene_landscape.webp-21ec35c188a13094f060ac331d086745.astc.ctex"]
 
 [params]
 
 compress/mode=2
-compress/high_quality=false
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0

@@ -2,36 +2,36 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dy44hg3i1ujvw"
-path.s3tc="res://.godot/imported/cathedral_Image_3.jpg-58ea5999f99c291b11d23c324b5b830f.s3tc.ctex"
-path.etc2="res://.godot/imported/cathedral_Image_3.jpg-58ea5999f99c291b11d23c324b5b830f.etc2.ctex"
+uid="uid://dqlfdw6yqln1t"
+path.bptc="res://.godot/imported/cathedral_transparent_normal.webp-f419bfcaf0349007a57693b999c702cb.bptc.ctex"
+path.astc="res://.godot/imported/cathedral_transparent_normal.webp-f419bfcaf0349007a57693b999c702cb.astc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "aef59299a06abfb56acc1e2fd36a2e18"
+"md5": "a5b457fcc795959e920a15bef8f9bb6d"
 }
 
 [deps]
 
-source_file="res://assets/maps/cathedral_Image_3.jpg"
-dest_files=["res://.godot/imported/cathedral_Image_3.jpg-58ea5999f99c291b11d23c324b5b830f.s3tc.ctex", "res://.godot/imported/cathedral_Image_3.jpg-58ea5999f99c291b11d23c324b5b830f.etc2.ctex"]
+source_file="res://assets/maps/cathedral_transparent_normal.webp"
+dest_files=["res://.godot/imported/cathedral_transparent_normal.webp-f419bfcaf0349007a57693b999c702cb.bptc.ctex", "res://.godot/imported/cathedral_transparent_normal.webp-f419bfcaf0349007a57693b999c702cb.astc.ctex"]
 
 [params]
 
 compress/mode=2
-compress/high_quality=false
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
-compress/normal_map=1
+compress/normal_map=0
 compress/channel_pack=0
 mipmaps/generate=true
 mipmaps/limit=-1
-roughness/mode=1
-roughness/src_normal="res://assets/maps/cathedral_Image_3.jpg"
+roughness/mode=0
+roughness/src_normal=""
 process/channel_remap/red=0
 process/channel_remap/green=1
 process/channel_remap/blue=2

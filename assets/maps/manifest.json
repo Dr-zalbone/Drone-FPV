@@ -15,11 +15,12 @@
         18.82228660583496
       ]
     },
-    "visual_tris": 1013732,
-    "collision_tris": 393230,
+    "visual_tris": 826045,
+    "collision_tris": 393058,
     "chunks": 12,
     "chunk_size": 12.0,
-    "lods": false
+    "lods": false,
+    "surround": "ground"
   },
   {
     "id": "eze_village_france",
@@ -41,7 +42,32 @@
     "collision_tris": 60000,
     "chunks": 144,
     "chunk_size": 48.0,
-    "lods": true
+    "lods": true,
+    "unshaded": true,
+    "surround": "sea"
+  },
+  {
+    "id": "lakeside_exterior_scene",
+    "title": "Lakeside - Exterior Scene",
+    "scene": "res://assets/maps/lakeside_exterior_scene.glb",
+    "bounds": {
+      "min": [
+        -312.25958251953125,
+        -20.29521942138672,
+        -312.2596130371094
+      ],
+      "max": [
+        312.25958251953125,
+        49.7096061706543,
+        312.2596130371094
+      ]
+    },
+    "visual_tris": 299988,
+    "collision_tris": 60000,
+    "chunks": 36,
+    "chunk_size": 48.0,
+    "lods": true,
+    "surround": "sea"
   },
   {
     "id": "new_york_city_manhattan",
@@ -64,6 +90,7 @@
     "chunks": 135,
     "chunk_size": 186.36295318603516,
     "lods": true,
-    "facade_detail": true
+    "facade_detail": true,
+    "surround": "sea"
   }
 ]

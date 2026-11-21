@@ -2,26 +2,26 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b6rlvx0tb88ft"
-path.s3tc="res://.godot/imported/new_york_city_manhattan_Image_0.jpg-145b8aeebe9fff2faad75567d303af56.s3tc.ctex"
-path.etc2="res://.godot/imported/new_york_city_manhattan_Image_0.jpg-145b8aeebe9fff2faad75567d303af56.etc2.ctex"
+uid="uid://cbpfkwfciaj53"
+path.bptc="res://.godot/imported/eze_village_france_Chunk2_Color_Mat_baseColor.webp-71be1bd4ade263faaeadeafde55ce354.bptc.ctex"
+path.astc="res://.godot/imported/eze_village_france_Chunk2_Color_Mat_baseColor.webp-71be1bd4ade263faaeadeafde55ce354.astc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "3b6cc1713994e5fb88c726a20b24f69b"
+"md5": "fd1fba515c1162403d4d491c7a1734b4"
 }
 
 [deps]
 
-source_file="res://assets/maps/new_york_city_manhattan_Image_0.jpg"
-dest_files=["res://.godot/imported/new_york_city_manhattan_Image_0.jpg-145b8aeebe9fff2faad75567d303af56.s3tc.ctex", "res://.godot/imported/new_york_city_manhattan_Image_0.jpg-145b8aeebe9fff2faad75567d303af56.etc2.ctex"]
+source_file="res://assets/maps/eze_village_france_Chunk2_Color_Mat_baseColor.webp"
+dest_files=["res://.godot/imported/eze_village_france_Chunk2_Color_Mat_baseColor.webp-71be1bd4ade263faaeadeafde55ce354.bptc.ctex", "res://.godot/imported/eze_village_france_Chunk2_Color_Mat_baseColor.webp-71be1bd4ade263faaeadeafde55ce354.astc.ctex"]
 
 [params]
 
 compress/mode=2
-compress/high_quality=false
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0

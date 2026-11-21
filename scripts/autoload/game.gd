@@ -31,9 +31,15 @@ var quality: int = GameEnums.Quality.MEDIUM
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	maps = _load_json_array(MAP_MANIFEST)
-	maps.append({"id": "test_field", "title": "Test Field (built-in)", "scene": ""})
+	maps.append({"id": "test_field", "title": "Valley Town (built-in)", "scene": "", "surround": "ground"})
 	credits = _load_json_array(CREDITS_FILE)
 	_load_settings()
+
+
+## Shown on the main menu. Bump application/config/version in project.godot
+## with every change you hand over for testing.
+func version_text() -> String:
+	return "v" + str(ProjectSettings.get_setting("application/config/version", "?"))
 
 
 func drone_spec() -> DroneSpec:
@@ -127,8 +133,9 @@ func credits_text() -> String:
 			lines.append("  " + Attribution.format_line(c))
 		lines.append("")
 	lines.append("[b]Licences[/b]")
-	lines.append("  3D models are used under their creators' Sketchfab licences.")
-	lines.append("  Drones without an imported model use built-in placeholder meshes.")
+	lines.append("  3D models are used under their creators' Sketchfab licences (shown above),")
+	lines.append("  converted and split into chunks for VR. CC BY-SA works stay under CC BY-SA.")
+	lines.append("  Valley Town and drones without an imported model are built in code.")
 	lines.append("")
 	lines.append("Made with Godot Engine (godotengine.org/license).")
 	return "\n".join(lines)

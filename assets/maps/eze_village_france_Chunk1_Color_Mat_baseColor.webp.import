@@ -2,26 +2,26 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bkcjyvkn886e4"
-path.s3tc="res://.godot/imported/eze_village_france_Image_1.png-6534b40dec002784d5079dacd869e258.s3tc.ctex"
-path.etc2="res://.godot/imported/eze_village_france_Image_1.png-6534b40dec002784d5079dacd869e258.etc2.ctex"
+uid="uid://d6cxpq7h1ay0"
+path.bptc="res://.godot/imported/eze_village_france_Chunk1_Color_Mat_baseColor.webp-c0289a9029b40145ddec828686d51ff8.bptc.ctex"
+path.astc="res://.godot/imported/eze_village_france_Chunk1_Color_Mat_baseColor.webp-c0289a9029b40145ddec828686d51ff8.astc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "04c8e259c499aaef40fca1068f4f5ca6"
+"md5": "daec7659bf7a049522f128c365d9d4dd"
 }
 
 [deps]
 
-source_file="res://assets/maps/eze_village_france_Image_1.png"
-dest_files=["res://.godot/imported/eze_village_france_Image_1.png-6534b40dec002784d5079dacd869e258.s3tc.ctex", "res://.godot/imported/eze_village_france_Image_1.png-6534b40dec002784d5079dacd869e258.etc2.ctex"]
+source_file="res://assets/maps/eze_village_france_Chunk1_Color_Mat_baseColor.webp"
+dest_files=["res://.godot/imported/eze_village_france_Chunk1_Color_Mat_baseColor.webp-c0289a9029b40145ddec828686d51ff8.bptc.ctex", "res://.godot/imported/eze_village_france_Chunk1_Color_Mat_baseColor.webp-c0289a9029b40145ddec828686d51ff8.astc.ctex"]
 
 [params]
 
 compress/mode=2
-compress/high_quality=false
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0

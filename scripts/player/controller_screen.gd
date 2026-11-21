@@ -5,6 +5,10 @@ extends Node3D
 
 const SCREEN_PX := Vector2i(960, 540)
 const DRONE_LAYER := 1 << 1
+## The RC itself. The drone camera must never see it: the screen samples the
+## drone camera's own render target, so seeing it is a feedback loop
+## ("same texture in framebuffer attachment and a uniform").
+const RC_LAYER := 1 << 2
 
 var drone: Drone
 
@@ -27,7 +31,7 @@ func _ready() -> void:
 	_cam = Camera3D.new()
 	_cam.fov = 80.0
 	_cam.far = 1500.0
-	_cam.cull_mask = 0xFFFFF & ~DRONE_LAYER
+	_cam.cull_mask = 0xFFFFF & ~DRONE_LAYER & ~RC_LAYER
 	_viewport.add_child(_cam)
 
 	var dark := StandardMaterial3D.new()
@@ -64,6 +68,7 @@ func _ready() -> void:
 	_telemetry.outline_size = 6
 	_telemetry.position = Vector3(0, -0.087, 0.007)
 	_telemetry.shaded = false
+	_telemetry.layers = RC_LAYER
 	bezel_node.add_child(_telemetry)
 
 	var stick_mesh := CylinderMesh.new()
@@ -82,6 +87,7 @@ func _mesh(mesh: Mesh, mat: Material, pos: Vector3) -> MeshInstance3D:
 	mi.material_override = mat
 	mi.position = pos
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.layers = RC_LAYER
 	return mi
 
 

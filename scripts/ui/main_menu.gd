@@ -82,6 +82,16 @@ func _ready() -> void:
 	credits.scroll_active = true
 	credits.text = Game.credits_text()
 	right.add_child(credits)
+
+	# Version, bottom-right corner, so it is obvious which build is running.
+	var version := make_label(Game.version_text(), 30, Color(1.0, 0.85, 0.3))
+	version.name = "Version"
+	version.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	version.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	version.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	version.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	version.position -= Vector2(24, 16)
+	add_child(version)
 	refresh()
 
 

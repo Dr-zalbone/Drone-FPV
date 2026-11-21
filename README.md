@@ -39,34 +39,60 @@ In Manual mode the centred throttle stick means **hover thrust**, because Quest 
 | Right trigger | Left mouse button | Click on menus |
 
 When no OpenXR runtime is found, the game runs in desktop mode with mouse look.
+OpenXR is switched off for Windows runs (`xr/openxr/enabled.windows=false` in `project.godot`), so testing on the PC without a headset shows no popup. Delete that line to use PC VR (Quest Link). Quest/Android builds are not affected.
+
+## Maps
+
+| Map | Source | Licence |
+|---|---|---|
+| Cathedral | [patrix on Sketchfab](https://sketchfab.com/3d-models/faed84a829114e378be255414a7826ca) | CC BY-SA 4.0 |
+| Èze Village - France | [Azad Balabanian on Sketchfab](https://sketchfab.com/3d-models/a18a1449661643e6ab98640a3e7eafc1) | CC BY 4.0 |
+| Lakeside - Exterior Scene | [aurelien_martel on Sketchfab](https://sketchfab.com/3d-models/07dfe01fb78c441db081646ff4c1d9e0) | CC BY 4.0 |
+| New York City. Manhattan | [truekit on Sketchfab](https://sketchfab.com/3d-models/372bc495b3a941308f4a3198bc45e17b) | CC BY 4.0 |
+| Valley Town (built-in) | generated in code (`scripts/world/test_field.gd`) | — |
+
+The pilot starts on a **lookout**: a raised, flat spot with a wide view and a flat pad for the drone, near the middle of the map (`WorldBuilder.find_pilot_spawn`).
+Maps with `surround` in their manifest entry get a sea or ground plane out to the horizon, so there is no grey void past the scanned area (`MapDressing`).
 
 ## Adding models
 
-Put the model files in the project root. The file name must carry the attribution:
+Raw source models are **not in git**. They are large, and they can be downloaded again.
+`tools/sources.json` lists each model's Sketchfab ID, author and licence. To download them all:
+
+1. Get a Sketchfab API token (free accounts work): sketchfab.com → Settings → Password & API.
+2. Store it as a user environment variable named `SKETCHFAB_API_TOKEN`.
+3. Run `python tools/fetch_sources.py` (or `py tools/fetch_sources.py` on Windows).
+
+The script downloads Sketchfab's **glTF zip**, because it holds the original textures (for example 4096 px).
+Sketchfab's "glb" download is a downscaled 1024 px version, so do not use it for maps.
+Each model lands in a root folder named after its attribution, with a `.gdignore` so Godot skips it.
+
+To add a new model, add an entry to `tools/sources.json` and run the fetch script.
+You can also drop a file in the project root. The file or folder name must carry the attribution:
 
 ```
-<title>_attribution-<author>_on_<site>.glb      (.gltf / .fbx / .obj also work)
+<title>_attribution-<author>_on_<site>.glb      (.gltf / .fbx / .obj also work, or a folder holding a .gltf)
 ```
 
-- File names containing `flycart`, `mini` or `fpv` are drones. They replace the built-in placeholder for that drone.
-- File names containing `pilot`, `flyer`, `person` or `human` are the pilot figure.
-- Every other file is a world (map).
+- Names containing `flycart`, `mini` or `fpv` are drones. They replace the built-in placeholder for that drone.
+- Names containing `pilot`, `flyer`, `person` or `human` are the pilot figure.
+- Every other model is a world (map).
 
-Then run the pipeline. It needs Blender (flatpak `org.blender.Blender` or `blender` on the PATH):
+Then run the pipeline. It needs Blender and Godot. It finds them on the PATH, as Linux flatpaks, or in the default Windows install folders (Blender Foundation, Steam). Override them with `BLENDER=`, `GODOT=` or `PYTHON=`.
 
 ```bash
-tools/process_models.sh
+tools/process_models.sh            # on Windows, run it from Git Bash
 ```
 
 The pipeline does the following:
-- Keeps map visuals at the **original** geometry and the original texture bytes. Map textures are imported lossless.
+- Keeps map visuals at the **original** geometry. Map textures are capped at 4096 px and stored as WebP (quality 90) to keep the repo small. Godot re-compresses them to VRAM formats (ASTC 4×4 on Quest) on import anyway.
 - Splits each map into spatial chunks: 48–190 m cells, or 12 m for the cathedral.
 - Gives each chunk LOD0 (the original), LOD1 (50 %) and LOD2 (20 %).
 - Builds a merged collision mesh of up to 60k triangles. The mesh name ends in `-colonly`, so Godot imports it as a trimesh `StaticBody3D`.
-- Writes `assets/maps/*.glb`, `assets/drones/*.glb`, `assets/pilot/pilot.glb`, `assets/maps/manifest.json` and `assets/credits.json`.
+- Writes `assets/maps/*.glb`, `assets/drones/*.glb`, `assets/pilot/pilot.glb`, `assets/maps/manifest.json` and `assets/credits.json`, with each model's licence from `tools/sources.json`.
 
 The credits panel on the start screen reads `credits.json`.
-The raw source files stay in the root. Their `.import` is set to `skip`, so Godot does not import them or ship them in the APK.
+Processed assets under `assets/` are stored with **Git LFS**. Run `git lfs install` once per machine.
 
 To reprocess only one model, pass part of its file name: `tools/process_models.sh cathedral`.
 
@@ -74,12 +100,13 @@ Per-map tuning lives in `MAP_OVERRIDES` in `tools/process_models.py`:
 
 | Map | Override | Why |
 |---|---|---|
-| Eze Village | `scale 0.01`, skybox mesh dropped | The photogrammetry is authored about 100× too large. The game draws its own sky. |
-| New York City Manhattan | `scale 250` | The source is an 8 × 11 m miniature. |
-| Cathedral | 12 m chunks, no LOD1/LOD2, collision voxel-remeshed at 0.35 m | It is voxel art: decimation shatters the cubes. |
+| Eze Village | `scale 0.01`, skybox mesh dropped, `unshaded`, `surround: sea` | The photogrammetry is authored about 100× too large, and its lighting is baked into the photos. Èze is on the coast. |
+| New York City Manhattan | `scale 250`, `facade_detail`, `surround: sea` | The source is an 8 × 11 m miniature. Manhattan is an island. |
+| Cathedral | 12 m chunks, no LOD1/LOD2, `visual_dissolve`, collision voxel-remeshed at 0.35 m | It is voxel art: decimation shatters the cubes, but merging flat runs of same-coloured faces is lossless. |
+| Lakeside | `surround: sea`, skydome mesh dropped | An island in a square lake: open water past the lake's edge hides the square. |
 
 Other override keys:
-- `spawn: [x, y, z]`: pilot position.
+- `spawn: [x, y, z]`: fixed pilot position instead of the lookout search.
 - `chunk_size`, `lods`, `visual_tris`, `collision_collapse`, `collision_voxel`.
 
 ## LOD and graphics quality
@@ -95,7 +122,7 @@ Choose **Graphics** in the menu or the pause menu.
 `MapLod` swaps the chunk LODs by distance using visibility ranges. Depth fog hides the view-distance cut-off.
 `tests/lod_stats.gd` prints rendered triangles per preset. With the Medium preset, Manhattan renders about 95k triangles in a typical view, against 337k in the full map.
 
-Note on Manhattan: its source has one 1024×1024 photo atlas for the whole city, about 0.12 texture pixels per metre.
+Note on Manhattan: its source has one 4096×4096 photo atlas for the whole city, about 0.5 texture pixels per metre.
 To make up for it, the map turns on `facade_detail`.
 - `shaders/facade_detail.gdshader` keeps the photo texture as the base colour.
 - It draws a procedural window grid on vertical walls: 3.6 m storeys and 3.2 m bays, varied per facade.
@@ -111,7 +138,8 @@ To enable it on another low-resolution map, add `"facade_detail": True` to that 
 4. Project → Export → **Quest 3S** (OpenXR mode, arm64, ETC2/ASTC textures).
 
 Performance settings: the Mobile renderer, 2× MSAA, dynamic foveation, no realtime shadows, auto mesh LODs, and a 90 Hz refresh/physics rate with physics interpolation.
-The RC screen viewport renders only in Flyer view.
+Photogrammetry maps with `unshaded` skip real-time lighting.
+The RC screen viewport renders only in Flyer view. The RC sits on its own render layer (`rc_controller`), which the drone camera never draws: the screen shows that camera's image, so seeing it would be a feedback loop.
 
 ## Tests
 

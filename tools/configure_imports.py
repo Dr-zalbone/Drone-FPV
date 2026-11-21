@@ -2,8 +2,10 @@
 `godot --import` passes by tools/process_models.sh).
 
 * assets/maps/*.glb  -> post-import script, auto LOD on/off per manifest
-* assets/maps images -> lossless (no VRAM compression) so photo atlases stay
-  sharp; mipmaps kept for VR shimmer control.
+* assets/maps images -> VRAM compressed, high quality (ASTC 4x4 on Quest,
+  BPTC on PC). Lossless would sit in VRAM as raw RGBA8: 4x the memory and
+  bandwidth of ASTC 4x4, which matters on a mobile GPU. Mipmaps kept for VR
+  shimmer control.
 Returns exit code 0; prints what changed.
 """
 import glob
@@ -50,7 +52,9 @@ def main():
     for ext in ("png", "jpg", "jpeg", "webp"):
         for imp in glob.glob(os.path.join(ROOT, "assets", "maps", f"*.{ext}.import")):
             changed |= patch(imp, {
-                "compress/mode": "0",
+                "compress/mode": "2",
+                "compress/high_quality": "true",
+                "detect_3d/compress_to": "0",
                 "mipmaps/generate": "true",
             })
     print("configure_imports: " + ("changes made" if changed else "nothing to change"))

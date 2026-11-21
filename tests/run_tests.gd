@@ -25,6 +25,10 @@ func _run() -> void:
 	_test_pilot_body()
 	_test_map_lod()
 	_test_facade_detail()
+	_test_unshaded()
+	_test_spawn_score()
+	_test_valley_terrain()
+	await _test_valley_world()
 	await _test_drone_physics()
 	print("\nRESULT: %d passed, %d failed" % [_passed, _failed])
 	quit(1 if _failed > 0 else 0)
@@ -50,6 +54,11 @@ func _test_attribution() -> void:
 	var c := Attribution.parse("eze_village_-_france_attribution-Azad_Balabanian_on_sketchfab.glb")
 	check(c.title == "Eze Village - France" and c.author == "Azad Balabanian", "attribution eze %s" % c)
 	check(Attribution.parse("icon.svg").is_empty(), "attribution none")
+	var folder := Attribution.parse("lakeside_-_exterior_scene_attribution-aurelien_martel_on_sketchfab")
+	check(folder.title == "Lakeside - Exterior Scene" and folder.author == "aurelien martel", "attribution folder %s" % folder)
+	var line := Attribution.format_line({"title": "Cathedral", "author": "patrix", "site": "Sketchfab", "license": "CC BY-SA 4.0"})
+	check(line == "\"Cathedral\" by patrix (Sketchfab), CC BY-SA 4.0", "credit line with licence: " + line)
+	check(not Attribution.format_line({"title": "X"}).contains(", "), "credit line without licence")
 
 
 func _test_shape_axis() -> void:
@@ -134,6 +143,8 @@ func _test_game_views() -> void:
 	check(game.flight_mode != GameEnums.FlightMode.MANUAL, "flycart rejects manual")
 	game.set_drone(&"mini5pro")
 	check(GameEnums.ViewMode.FLYER in game.available_views(), "flyer for mini")
+	check(game.version_text() == "v" + str(ProjectSettings.get_setting("application/config/version")) \
+		and game.version_text() != "v?", "version shown: " + game.version_text())
 
 
 func _test_quality() -> void:
@@ -198,6 +209,73 @@ func _test_facade_detail() -> void:
 	check(a.get_shader_parameter(&"albedo_tex") == textured.albedo_texture, "keeps original texture")
 	check((root_node.get_child(2) as MeshInstance3D).get_surface_override_material(0) == null, "untextured untouched")
 	root_node.free()
+
+
+func _test_unshaded() -> void:
+	var root_node := Node3D.new()
+	var lit := StandardMaterial3D.new()
+	for i in 2:
+		var mi := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.material = lit
+		mi.mesh = box
+		root_node.add_child(mi)
+	check(MapDressing.make_unshaded(root_node) == 1, "one shared material converted once")
+	var a := (root_node.get_child(0) as MeshInstance3D).get_active_material(0) as BaseMaterial3D
+	var b := (root_node.get_child(1) as MeshInstance3D).get_active_material(0) as BaseMaterial3D
+	check(a.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED and a == b, "unshaded copy shared")
+	check(lit.shading_mode != BaseMaterial3D.SHADING_MODE_UNSHADED, "source material untouched")
+	root_node.free()
+
+
+func _test_spawn_score() -> void:
+	var lookout := WorldBuilder.spawn_score(1.0, 0.9, 0.2)
+	var street := WorldBuilder.spawn_score(0.0, 0.3, 0.2)
+	var far_edge := WorldBuilder.spawn_score(1.0, 0.9, 1.0)
+	check(lookout > street, "high open lookout beats low street")
+	check(lookout > far_edge, "centre beats map edge")
+	check(WorldBuilder.facing_value(0.9, 1.0) > WorldBuilder.facing_value(1.0, -1.0), "face the scenery, not the void")
+	check(WorldBuilder.facing_value(1.0, 0.5) > WorldBuilder.facing_value(0.2, 0.5), "prefer open views")
+
+
+func _test_valley_terrain() -> void:
+	check(near(TestField.height_at(123.4, -56.7), TestField.height_at(123.4, -56.7)), "terrain deterministic")
+	var flat := true
+	for i in 24:
+		var a := i * TAU / 24.0
+		var r := (TestField.TOWN_RADIUS - 10.0) * (0.3 + 0.7 * float(i % 3) / 2.0)
+		var p := TestField.TOWN_CENTER + Vector2(cos(a), sin(a)) * r
+		flat = flat and near(TestField.height_at(p.x, p.y), TestField.TOWN_HEIGHT, 0.01)
+	check(flat, "town plateau is flat")
+	check(near(TestField.height_at(TestField.LOOKOUT.x, TestField.LOOKOUT.y), TestField.LOOKOUT_HEIGHT, 0.01), "lookout pad at its height")
+	check(TestField.height_at(TestField.river_x(100.0), 100.0) < TestField.WATER_LEVEL, "river bed under water")
+	check(TestField.height_at(0.0, 0.0) > TestField.WATER_LEVEL, "town side is dry land")
+	var xf := TestField.spawn_transform()
+	var to_town := (Vector3(TestField.TOWN_CENTER.x, 0, TestField.TOWN_CENTER.y) - xf.origin).normalized()
+	check((-xf.basis.z).dot(to_town) > 0.95, "pilot faces the town")
+
+
+## Integration: Valley Town builds, has collision where it is drawn, and the
+## spawn search on a real map finds a flat lookout spot with a drone pad.
+func _test_valley_world() -> void:
+	var world := TestField.build()
+	root.add_child(world)
+	for i in 3:
+		await physics_frame
+	var space := world.get_world_3d().direct_space_state
+	var spawn: Transform3D = world.get_meta(&"spawn")
+	var hit := WorldBuilder.ground_at(space, spawn.origin + Vector3(0, 20, 0), spawn.origin.y - 50.0)
+	check(not hit.is_empty() and near((hit.position as Vector3).y, spawn.origin.y, 0.6), "lookout has collision (%s)" % hit.get("position"))
+	var town := Vector3(TestField.TOWN_CENTER.x + 22.0, 200.0, TestField.TOWN_CENTER.y + 22.0)
+	check(not WorldBuilder.ground_at(space, town, -50.0).is_empty(), "town has collision")
+	check(WorldBuilder.has_drone_pad(space, spawn.origin, -spawn.basis.z), "drone pad in front of lookout")
+	var bounds := WorldBuilder.visual_bounds(world)
+	var found := WorldBuilder.find_pilot_spawn(space, bounds)
+	check(found.origin.y > TestField.WATER_LEVEL, "spawn search lands on dry ground (%s)" % found.origin)
+	check(WorldBuilder.has_drone_pad(space, found.origin, -found.basis.z), "spawn search keeps a drone pad")
+	check(world.find_children("*", "MeshInstance3D", true, false).size() < 90, "few draw calls")
+	world.queue_free()
+	await physics_frame
 
 
 ## Integration: drone hovers, climbs and moves forward in a real physics world.

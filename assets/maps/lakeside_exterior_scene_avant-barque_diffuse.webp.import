@@ -2,26 +2,26 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dpvxpp2uuft74"
-path.s3tc="res://.godot/imported/cathedral_Image_2.jpg-71536b9404805e71758ea25913ef2f72.s3tc.ctex"
-path.etc2="res://.godot/imported/cathedral_Image_2.jpg-71536b9404805e71758ea25913ef2f72.etc2.ctex"
+uid="uid://cmlw83kas4ho3"
+path.bptc="res://.godot/imported/lakeside_exterior_scene_avant-barque_diffuse.webp-12ba7dc56be73f6b5ae2b741f695cea0.bptc.ctex"
+path.astc="res://.godot/imported/lakeside_exterior_scene_avant-barque_diffuse.webp-12ba7dc56be73f6b5ae2b741f695cea0.astc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "5a410c4a7ff208859c9079d03bf081d8"
+"md5": "93a5f923218faf6f81109f9bff58a73c"
 }
 
 [deps]
 
-source_file="res://assets/maps/cathedral_Image_2.jpg"
-dest_files=["res://.godot/imported/cathedral_Image_2.jpg-71536b9404805e71758ea25913ef2f72.s3tc.ctex", "res://.godot/imported/cathedral_Image_2.jpg-71536b9404805e71758ea25913ef2f72.etc2.ctex"]
+source_file="res://assets/maps/lakeside_exterior_scene_avant-barque_diffuse.webp"
+dest_files=["res://.godot/imported/lakeside_exterior_scene_avant-barque_diffuse.webp-12ba7dc56be73f6b5ae2b741f695cea0.bptc.ctex", "res://.godot/imported/lakeside_exterior_scene_avant-barque_diffuse.webp-12ba7dc56be73f6b5ae2b741f695cea0.astc.ctex"]
 
 [params]
 
 compress/mode=2
-compress/high_quality=false
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
