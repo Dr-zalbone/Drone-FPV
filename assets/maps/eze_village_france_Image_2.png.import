@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cefeqnfl52tpd"
-path="res://.godot/imported/eze_village_france_Image_2.png-08d529858c83d42a1ceed2fdfe3f7f72.ctex"
+path.s3tc="res://.godot/imported/eze_village_france_Image_2.png-08d529858c83d42a1ceed2fdfe3f7f72.s3tc.ctex"
+path.etc2="res://.godot/imported/eze_village_france_Image_2.png-08d529858c83d42a1ceed2fdfe3f7f72.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "587e658b8b11e24aa3fcc65dd5f69ae4"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/maps/eze_village_france_Image_2.png"
-dest_files=["res://.godot/imported/eze_village_france_Image_2.png-08d529858c83d42a1ceed2fdfe3f7f72.ctex"]
+dest_files=["res://.godot/imported/eze_village_france_Image_2.png-08d529858c83d42a1ceed2fdfe3f7f72.s3tc.ctex", "res://.godot/imported/eze_village_france_Image_2.png-08d529858c83d42a1ceed2fdfe3f7f72.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +42,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0
