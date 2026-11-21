@@ -13,6 +13,10 @@ var flight_mode: int = FM.NORMAL
 var input := Vector4.ZERO  # x = yaw, y = throttle, z = roll, w = pitch (all -1..1)
 var is_crashed := false
 var armed := true
+## FPV "look steers yaw" (DJI head-tracking style): world yaw the drone turns
+## to face, set by PlayerRig from the camera. NAN = normal yaw-stick control.
+## The rig folds the yaw stick into this heading, so the stick is ignored here.
+var look_yaw := NAN
 
 var camera_mount: Node3D
 var visual: Node3D
@@ -121,8 +125,10 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 
 func _integrate_angle(state: PhysicsDirectBodyState3D, dt: float) -> void:
 	var p := spec.mode_params(flight_mode)
-	var yaw_stick := input.x
-	_target_yaw = wrapf(_target_yaw - yaw_stick * deg_to_rad(p.yaw_rate_deg) * dt, -PI, PI)
+	if is_nan(look_yaw):
+		_target_yaw = wrapf(_target_yaw - input.x * deg_to_rad(p.yaw_rate_deg) * dt, -PI, PI)
+	else:
+		_target_yaw = look_yaw
 	var desired := FlightMath.desired_velocity(_target_yaw, input.z, input.w, input.y, p)
 	var accel := FlightMath.velocity_accel(state.linear_velocity, desired, p)
 	# Cancel gravity and apply the commanded acceleration.

@@ -29,6 +29,8 @@ func _run() -> void:
 	_test_spawn_score()
 	_test_valley_terrain()
 	await _test_valley_world()
+	_test_fpv_look_math()
+	await _test_fpv_look_steers()
 	await _test_drone_physics()
 	print("\nRESULT: %d passed, %d failed" % [_passed, _failed])
 	quit(1 if _failed > 0 else 0)
@@ -226,6 +228,29 @@ func _test_unshaded() -> void:
 	check(a.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED and a == b, "unshaded copy shared")
 	check(lit.shading_mode != BaseMaterial3D.SHADING_MODE_UNSHADED, "source material untouched")
 	root_node.free()
+	# Baked light in the emissive texture (Cathedral): becomes the colour.
+	var tex := ImageTexture.create_from_image(Image.create(4, 4, false, Image.FORMAT_RGBA8))
+	var baked := StandardMaterial3D.new()
+	baked.emission_enabled = true
+	baked.emission_texture = tex
+	var glass := StandardMaterial3D.new()
+	glass.albedo_texture = tex
+	glass.albedo_color = Color.BLACK
+	glass.emission_enabled = true
+	glass.emission_texture = tex
+	root_node = Node3D.new()
+	for mat in [baked, glass]:
+		var mi := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.material = mat
+		mi.mesh = box
+		root_node.add_child(mi)
+	MapDressing.make_unshaded(root_node)
+	var b0 := (root_node.get_child(0) as MeshInstance3D).get_active_material(0) as BaseMaterial3D
+	check(b0.albedo_texture == tex and not b0.emission_enabled and b0.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED,
+		"emissive-baked material uses its emissive texture as colour")
+	check((root_node.get_child(1) as MeshInstance3D).get_active_material(0) == glass, "black-base glass left lit")
+	root_node.free()
 
 
 func _test_spawn_score() -> void:
@@ -272,8 +297,64 @@ func _test_valley_world() -> void:
 	var bounds := WorldBuilder.visual_bounds(world)
 	var found := WorldBuilder.find_pilot_spawn(space, bounds)
 	check(found.origin.y > TestField.WATER_LEVEL, "spawn search lands on dry ground (%s)" % found.origin)
-	check(WorldBuilder.has_drone_pad(space, found.origin, -found.basis.z), "spawn search keeps a drone pad")
+	var pad := WorldBuilder.pad_direction(space, found.origin, FlightMath.basis_yaw(found.basis))
+	check(WorldBuilder.has_drone_pad(space, found.origin, pad), "spawn search keeps a drone pad")
 	check(world.find_children("*", "MeshInstance3D", true, false).size() < 90, "few draw calls")
+	world.queue_free()
+	await physics_frame
+
+
+## PlayerRig uses the Game autoload, which does not exist yet when this
+## script compiles, so it is loaded at runtime instead of named.
+func _rig_script() -> GDScript:
+	return load("res://scripts/player/player_rig.gd")
+
+
+func _test_fpv_look_math() -> void:
+	var rig_script := _rig_script()
+	check(rig_script.fpv_look_steers(GameEnums.FlightMode.NORMAL), "look steers in angle modes")
+	check(not rig_script.fpv_look_steers(GameEnums.FlightMode.MANUAL), "manual mode: view follows drone")
+	check(near(rig_script.fpv_look_yaw(0.5, Basis(Vector3.UP, 0.3)), 0.8), "look yaw = reference + head yaw")
+	var pitched := Basis.from_euler(Vector3(-0.6, 0.3, 0.0))
+	check(near(rig_script.fpv_look_yaw(0.0, pitched), 0.3), "looking down does not change the heading")
+	check(near(rig_script.fpv_stick_yaw(0.0, 1.0, 90.0, 1.0), -PI / 2.0), "full right yaw stick turns right at the mode rate")
+
+
+## Integration: in FPV, looking 60 deg left turns the drone to face there,
+## then it holds that heading (no feedback spin); the view stays where you look.
+func _test_fpv_look_steers() -> void:
+	var world := WorldBuilder.make_test_field()
+	root.add_child(world)
+	var drone := Drone.new()
+	root.add_child(drone)
+	drone.setup(DroneCatalog.get_spec(&"mini5pro"), Transform3D(Basis.IDENTITY, Vector3(0, 5, 0)), -100.0)
+	drone.set_flight_mode(GameEnums.FlightMode.NORMAL)
+	var rig: Node3D = _rig_script().new()
+	root.add_child(rig)
+	rig.drone = drone
+	rig.set_view_mode(GameEnums.ViewMode.FPV)
+	rig.desktop_look(Vector2(-deg_to_rad(60.0) / rig.MOUSE_SENS, 0.0))  # mouse left
+	for i in 120:
+		await physics_frame
+	var yaw := FlightMath.basis_yaw(drone.global_basis)
+	check(near(yaw, deg_to_rad(60.0), 0.05), "drone turned to the look direction (%.1f deg)" % rad_to_deg(yaw))
+	for i in 60:
+		await physics_frame
+	check(near(FlightMath.basis_yaw(drone.global_basis), yaw, 0.02), "heading holds, no feedback spin")
+	var cam: Node3D = rig.camera
+	check(near(FlightMath.basis_yaw(cam.global_basis), deg_to_rad(60.0), 0.05), "view stays where you look")
+	drone.spec = DroneCatalog.get_spec(&"dji_fpv")  # the only drone with Manual
+	drone.set_flight_mode(GameEnums.FlightMode.MANUAL)
+	for i in 2:
+		await process_frame
+	check(is_nan(drone.look_yaw), "manual mode ignores the look")
+	rig.set_view_mode(GameEnums.ViewMode.THIRD_PERSON)
+	drone.set_flight_mode(GameEnums.FlightMode.NORMAL)
+	for i in 2:
+		await process_frame
+	check(is_nan(drone.look_yaw), "3rd person does not steer with the look")
+	rig.queue_free()
+	drone.queue_free()
 	world.queue_free()
 	await physics_frame
 

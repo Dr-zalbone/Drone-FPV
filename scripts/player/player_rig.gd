@@ -1,7 +1,11 @@
 class_name PlayerRig
 extends XROrigin3D
 ## The player's XR origin. Positions itself every frame for the active view:
-##   FPV          - eyes at the drone camera; head look is a free 360 view.
+##   FPV          - eyes at the drone camera. Looking left/right turns the
+##                  drone to face where you look (DJI goggles head tracking);
+##                  looking up/down tilts the camera. The yaw stick turns the
+##                  view and the drone together. Manual (acro) mode has no
+##                  heading hold, so there the view simply turns with the drone.
 ##   THIRD_PERSON - head direction orbits the camera around the drone.
 ##   FLYER        - fixed pilot position on the ground; only the head moves.
 ## On desktop the XRCamera3D is driven by the mouse instead of an HMD.
@@ -136,27 +140,52 @@ func _process(delta: float) -> void:
 		camera.transform = Transform3D(Basis.from_euler(Vector3(_desktop_pitch, _desktop_yaw, 0.0)), Vector3(0, eye, 0))
 	if drone == null or view_mode == LOBBY:
 		return
+	if view_mode != VM.FPV:
+		drone.look_yaw = NAN
 	match view_mode:
 		VM.FPV:
-			_update_fpv()
+			_update_fpv(delta)
 		VM.THIRD_PERSON:
 			_update_third_person(delta)
 		VM.FLYER:
 			global_transform = Transform3D(Basis(Vector3.UP, _ref_yaw), pilot_transform.origin)
 
 
-func _update_fpv() -> void:
+func _update_fpv(delta: float) -> void:
 	var mount := drone.camera_transform_interpolated()
-	var ref: Basis
-	if Game.fpv_view_local:
-		if Game.fpv_follow_attitude:
-			ref = mount.basis.orthonormalized()
-		else:
-			ref = Basis(Vector3.UP, FlightMath.basis_yaw(mount.basis))
+	var drone_yaw := FlightMath.basis_yaw(mount.basis)
+	var steering := fpv_look_steers(drone.flight_mode)
+	var ref_yaw := drone_yaw
+	if steering:
+		# The view reference is world-fixed (NOT the drone's heading), otherwise
+		# the drone turning would turn the view, which turns the drone again.
+		if not get_tree().paused:
+			_ref_yaw = fpv_stick_yaw(_ref_yaw, drone.input.x, drone.spec.mode_params(drone.flight_mode).yaw_rate_deg, delta)
+		ref_yaw = _ref_yaw
 	else:
-		ref = Basis(Vector3.UP, _ref_yaw)
+		_ref_yaw = drone_yaw  # so switching back to an angle mode does not jump
+	var ref := Basis(Vector3.UP, ref_yaw)
+	if Game.fpv_follow_attitude:
+		# Keep the drone's pitch/roll (horizon tilt), swap its yaw for ours.
+		ref = ref * (Basis(Vector3.UP, -drone_yaw) * mount.basis.orthonormalized())
 	# Place the origin so the head sits exactly on the drone camera.
 	global_transform = Transform3D(ref, mount.origin - ref * camera.position)
+	drone.look_yaw = fpv_look_yaw(ref_yaw, camera.transform.basis) if steering else NAN
+
+
+## Look-steering applies in the angle modes; Manual (acro) flies on rates.
+static func fpv_look_steers(flight_mode: int) -> bool:
+	return flight_mode != GameEnums.FlightMode.MANUAL
+
+
+## The yaw stick turns the FPV view reference (and so the drone) at the mode's yaw rate.
+static func fpv_stick_yaw(ref_yaw: float, yaw_stick: float, yaw_rate_deg: float, delta: float) -> float:
+	return wrapf(ref_yaw - yaw_stick * deg_to_rad(yaw_rate_deg) * delta, -PI, PI)
+
+
+## World yaw the drone should face: view reference yaw + where the head/mouse looks.
+static func fpv_look_yaw(ref_yaw: float, head_basis: Basis) -> float:
+	return wrapf(ref_yaw + FlightMath.basis_yaw(head_basis), -PI, PI)
 
 
 func _update_third_person(delta: float) -> void:

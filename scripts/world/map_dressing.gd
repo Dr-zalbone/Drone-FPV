@@ -13,6 +13,9 @@ const GROUND_COLOR := Color(0.36, 0.42, 0.3)
 
 
 ## Returns the number of materials switched to unshaded.
+## Baked-light models often keep their final colours in the EMISSIVE texture
+## with no base colour (e.g. the Cathedral: white base + emission = blown out
+## when lit). Those get the emissive texture as their unshaded colour.
 static func make_unshaded(map: Node) -> int:
 	var cache := {}  # source material -> unshaded copy (keeps sharing intact)
 	for node in map.find_children("*", "MeshInstance3D", true, false):
@@ -23,8 +26,17 @@ static func make_unshaded(map: Node) -> int:
 			var src := mi.get_active_material(i) as BaseMaterial3D
 			if src == null:
 				continue
+			# Base texture only for alpha + emissive colour (e.g. stained glass with
+			# a black base): already correct when lit, and unshaded would drop
+			# the emission, so leave it.
+			if src.albedo_texture != null and src.emission_enabled and src.emission_texture != null:
+				continue
 			if not cache.has(src):
 				var mat := src.duplicate() as BaseMaterial3D
+				if mat.albedo_texture == null and mat.emission_enabled and mat.emission_texture != null:
+					mat.albedo_texture = mat.emission_texture
+					mat.albedo_color = Color(mat.emission.r, mat.emission.g, mat.emission.b, mat.albedo_color.a)
+					mat.emission_enabled = false
 				mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 				cache[src] = mat
 			mi.set_surface_override_material(i, cache[src])

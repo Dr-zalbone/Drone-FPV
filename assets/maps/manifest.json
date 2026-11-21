@@ -20,7 +20,9 @@
     "chunks": 12,
     "chunk_size": 12.0,
     "lods": false,
-    "surround": "ground"
+    "surround": "ground",
+    "unshaded": true,
+    "spawn_low": true
   },
   {
     "id": "eze_village_france",

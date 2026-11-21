@@ -222,17 +222,19 @@ func _finish_loading(map: Node3D, entry: Dictionary) -> void:
 		var at := Vector3(s[0], s[1], s[2])
 		pilot_xf = Transform3D(Basis(Vector3.UP, WorldBuilder.open_yaw(space, at + Vector3(0, 1.6, 0))), at)
 	else:
-		pilot_xf = WorldBuilder.find_pilot_spawn(space, bounds)
+		pilot_xf = WorldBuilder.find_pilot_spawn(space, bounds, entry.get("spawn_low", false))
 	if entry.has("surround"):
 		var radius := Vector2(bounds.size.x, bounds.size.z).length() + 5000.0
 		_map.add_child(MapDressing.make_surround(entry.surround, surround_y, bounds.get_center(), radius))
 		await get_tree().physics_frame
 
 	var spec := Game.drone_spec()
-	# Drone sits on the ground a few metres in front of the pilot (-Z), on the
-	# flat pad the spawn search checked.
+	# Drone sits on flat ground a few metres from the pilot: straight ahead if
+	# possible, else the nearest flat spot to the side. It faces the same way
+	# as the pilot.
 	var ahead_dist := minf(2.0 + spec.span * 1.5, WorldBuilder.DRONE_PAD_AHEAD)
-	var ahead := pilot_xf.origin + pilot_xf.basis * Vector3(0, 0, -ahead_dist)
+	var pad_dir := WorldBuilder.pad_direction(space, pilot_xf.origin, FlightMath.basis_yaw(pilot_xf.basis))
+	var ahead := pilot_xf.origin + pad_dir * ahead_dist
 	var hit := WorldBuilder.ground_at(space, ahead + Vector3(0, 5, 0), bounds.position.y - 20.0)
 	var ground_y: float = hit.position.y if not hit.is_empty() else pilot_xf.origin.y
 	var drone_xf := Transform3D(pilot_xf.basis, Vector3(ahead.x, ground_y + spec.body_size.y * 0.5 + 0.05, ahead.z))
@@ -299,7 +301,7 @@ func _on_flight_mode_changed(mode: int) -> void:
 func _on_view_lock_changed() -> void:
 	if _drone:
 		rig.recenter()
-		rig.hud.toast("View " + ("turns with drone" if Game.view_is_local() else "world-fixed"))
+		rig.hud.toast("3rd person view " + ("turns with drone" if Game.view_is_local() else "world-fixed"))
 
 
 func _reset_drone() -> void:

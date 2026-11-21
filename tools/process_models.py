@@ -81,8 +81,12 @@ MAP_OVERRIDES = {
     # Voxel model: collapse decimation shatters cubes, so no LOD1/LOD2. A
     # planar dissolve merges each flat run of same-coloured cube faces into
     # one polygon instead, which is lossless for voxel art.
+    # Its lighting is baked into the EMISSIVE texture (no base colour), so it
+    # renders unshaded with that texture as colour, like Sketchfab shows it.
     "cathedral": {"collision_collapse": False, "collision_voxel": 0.35, "lods": False, "chunk_size": 12.0,
-                  "visual_dissolve": True, "surround": "ground"},
+                  "visual_dissolve": True, "surround": "ground", "unshaded": True,
+                  # Diorama: start on its ground facing the building, not on the roof.
+                  "spawn_low": True},
     # Miniature city (~8 x 11 units); x250 puts the tallest towers near 500 m.
     # Its single 4096 px atlas is ~0.5 px/m, so the game adds procedural
     # window detail (shaders/facade_detail.gdshader). Manhattan is an island.

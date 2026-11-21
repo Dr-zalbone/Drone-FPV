@@ -166,7 +166,9 @@ static func spawn_score(height_norm: float, openness: float, center_dist_norm: f
 ## Picks a pilot standing spot: a flat lookout with open sky above, a wide
 ## view and a drone pad in front, near the middle of the map. Faces the most
 ## open direction that has a pad.
-static func find_pilot_spawn(space: PhysicsDirectSpaceState3D, bounds: AABB) -> Transform3D:
+## prefer_low: stand at ground level instead (dioramas, where the highest
+## open spot is the roof of the building you came to look at).
+static func find_pilot_spawn(space: PhysicsDirectSpaceState3D, bounds: AABB, prefer_low := false) -> Transform3D:
 	var center := bounds.get_center()
 	var top := bounds.end.y + 20.0
 	var bottom := bounds.position.y - 20.0
@@ -200,11 +202,15 @@ static func find_pilot_spawn(space: PhysicsDirectSpaceState3D, bounds: AABB) -> 
 	var best_yaw := 0.0
 	var best_score := -INF
 	for p in spots:
-		var view := view_openness(space, p + Vector3(0, 1.6, 0), center)
+		# Roofs always have the most open view, so "low" must be a hard rule.
+		if prefer_low and p.y > lo + 0.25 * (hi - lo):
+			continue
+		var view := view_openness(space, p + Vector3(0, 1.6, 0), center, prefer_low)
 		if view.y < 0.0:
 			continue  # nowhere to put the drone
+		var height_norm := (p.y - lo) / maxf(hi - lo, 0.01)
 		var score := spawn_score(
-			(p.y - lo) / maxf(hi - lo, 0.01), view.x,
+			1.0 - height_norm if prefer_low else height_norm, view.x,
 			Vector2(p.x - center.x, p.z - center.z).length() / half_diag)
 		if score > best_score:
 			best_score = score
@@ -218,11 +224,13 @@ static func find_pilot_spawn(space: PhysicsDirectSpaceState3D, bounds: AABB) -> 
 ## Returns Vector2(openness 0..1, yaw to face), or yaw = -1 when no direction
 ## has a flat drone pad ahead. The facing is open AND looks towards `center`
 ## (the scenery): "open" alone would also mean staring at empty space past
-## the edge of the map.
-static func view_openness(space: PhysicsDirectSpaceState3D, eye: Vector3, center: Vector3) -> Vector2:
+## the edge of the map. face_center: ignore openness when choosing the yaw
+## (dioramas: face the building even though the view outwards is emptier).
+static func view_openness(space: PhysicsDirectSpaceState3D, eye: Vector3, center: Vector3, face_center := false) -> Vector2:
 	var total := 0.0
 	var best_yaw := -1.0
 	var best_value := -INF
+	var any_pad := false
 	var to_center := Vector3(center.x - eye.x, 0, center.z - eye.z)
 	var has_center := to_center.length() > 5.0
 	to_center = to_center.normalized() if has_center else Vector3.ZERO
@@ -233,11 +241,25 @@ static func view_openness(space: PhysicsDirectSpaceState3D, eye: Vector3, center
 		var hit := _ray(space, eye, eye + dir * SPAWN_VIEW_REACH)
 		var free := SPAWN_VIEW_REACH if hit.is_empty() else eye.distance_to(hit.position)
 		total += free
-		var value := facing_value(free / SPAWN_VIEW_REACH, dir.dot(to_center))
-		if value > best_value and has_drone_pad(space, eye - Vector3(0, 1.6, 0), dir):
+		var value := dir.dot(to_center) if face_center else facing_value(free / SPAWN_VIEW_REACH, dir.dot(to_center))
+		if value > best_value:
 			best_value = value
 			best_yaw = yaw
-	return Vector2(total / (dirs * SPAWN_VIEW_REACH), best_yaw)
+		any_pad = any_pad or has_drone_pad(space, eye - Vector3(0, 1.6, 0), dir)
+	# The drone goes on the nearest pad around the pilot (pad_direction), so
+	# a pad is needed somewhere, not necessarily straight ahead.
+	return Vector2(total / (dirs * SPAWN_VIEW_REACH), best_yaw if any_pad else -1.0)
+
+
+## Direction (horizontal unit vector) for the drone's start pad: straight
+## ahead if flat there, else the nearest flat direction to either side.
+static func pad_direction(space: PhysicsDirectSpaceState3D, feet: Vector3, yaw: float) -> Vector3:
+	for step in 7:
+		for side: float in ([0.0] if step == 0 else [1.0, -1.0]):
+			var dir := Basis(Vector3.UP, yaw + side * step * TAU / 12.0) * Vector3.FORWARD
+			if has_drone_pad(space, feet, dir):
+				return dir
+	return Basis(Vector3.UP, yaw) * Vector3.FORWARD
 
 
 ## How good a facing direction is: open view (0..1) and looking towards the

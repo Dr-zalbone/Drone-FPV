@@ -7,11 +7,11 @@ imported Sketchfab worlds. Every view gives a full 360° look-around.
 
 | View | Who can use it | Head movement |
 |---|---|---|
-| **FPV (goggles)** | all drones | Free 360° look from the drone camera. It never steers the drone. The default view **turns with the drone**. |
+| **FPV (goggles)** | all drones | **Looking steers the drone** (DJI goggles head-tracking style): look left/right and the drone turns to face there; look up/down to tilt the camera. The yaw stick turns view and drone together. In Manual (acro) mode the view simply turns with the drone. |
 | **3rd person** | all drones | Turning your head **orbits** the camera around the drone. The default view is **world-fixed**. |
 | **Flyer (pilot)** | Mini 5 Pro, FlyCart | You stand still as the pilot. Your body turns only on yaw with your head, and the RC is held at chest height, so looking down always shows its live drone-camera screen and telemetry. |
 
-Press **X** (or **L**) to switch the active view between "turns with drone" and "world-fixed".
+Press **X** (or **L**) to switch the 3rd person view between "turns with drone" and "world-fixed".
 In the pause menu, you can also turn on "FPV horizon tilts with drone" (real goggles feel, harder on the stomach).
 
 ## Flight modes
@@ -51,7 +51,9 @@ OpenXR is switched off for Windows runs (`xr/openxr/enabled.windows=false` in `p
 | New York City. Manhattan | [truekit on Sketchfab](https://sketchfab.com/3d-models/372bc495b3a941308f4a3198bc45e17b) | CC BY 4.0 |
 | Valley Town (built-in) | generated in code (`scripts/world/test_field.gd`) | — |
 
-The pilot starts on a **lookout**: a raised, flat spot with a wide view and a flat pad for the drone, near the middle of the map (`WorldBuilder.find_pilot_spawn`).
+The pilot starts on a **lookout**: a raised, flat spot with a wide view near the middle of the map, facing into the map, with flat ground for the drone close by (`WorldBuilder.find_pilot_spawn`). Dioramas such as the Cathedral set `spawn_low` instead: the pilot stands on the diorama's ground, facing the building.
+
+The Cathedral's lighting is baked into its **emissive** texture (it has no base colour). With `unshaded`, `MapDressing` uses that texture as the colour, as Sketchfab shows it; lit, it would render almost white.
 Maps with `surround` in their manifest entry get a sea or ground plane out to the horizon, so there is no grey void past the scanned area (`MapDressing`).
 
 ## Adding models

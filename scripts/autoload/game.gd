@@ -19,8 +19,8 @@ var selected_map := 0
 var selected_drone: StringName = &"mini5pro"
 var view_mode: int = VM.THIRD_PERSON
 var flight_mode: int = GameEnums.FlightMode.NORMAL
-## View turns with the drone (true) or stays world-fixed (false), per view mode.
-var fpv_view_local := true
+## 3rd person view turns with the drone (true) or stays world-fixed (false).
+## FPV has no such option: there, looking steers the drone (PlayerRig).
 var third_view_local := false
 ## FPV local view also follows drone pitch/roll (real goggles feel, less comfortable).
 var fpv_follow_attitude := false
@@ -95,20 +95,17 @@ func cycle_flight_mode() -> void:
 func view_is_local() -> bool:
 	match view_mode:
 		VM.FPV:
-			return fpv_view_local
+			return true
 		VM.THIRD_PERSON:
 			return third_view_local
 	return false
 
 
+## Only 3rd person has a view lock (FPV always steers with the look).
 func toggle_view_lock() -> void:
-	match view_mode:
-		VM.FPV:
-			fpv_view_local = not fpv_view_local
-		VM.THIRD_PERSON:
-			third_view_local = not third_view_local
-		_:
-			return
+	if view_mode != VM.THIRD_PERSON:
+		return
+	third_view_local = not third_view_local
 	view_lock_changed.emit()
 
 
@@ -148,7 +145,6 @@ func save_settings() -> void:
 	cfg.set_value("game", "view", view_mode)
 	cfg.set_value("game", "flight", flight_mode)
 	cfg.set_value("game", "quality", quality)
-	cfg.set_value("view", "fpv_local", fpv_view_local)
 	cfg.set_value("view", "third_local", third_view_local)
 	cfg.set_value("view", "fpv_attitude", fpv_follow_attitude)
 	cfg.save(SETTINGS_FILE)
@@ -165,7 +161,6 @@ func _load_settings() -> void:
 	view_mode = cfg.get_value("game", "view", view_mode)
 	flight_mode = cfg.get_value("game", "flight", flight_mode)
 	quality = clampi(cfg.get_value("game", "quality", quality), 0, GameEnums.QUALITY_NAMES.size() - 1)
-	fpv_view_local = cfg.get_value("view", "fpv_local", fpv_view_local)
 	third_view_local = cfg.get_value("view", "third_local", third_view_local)
 	fpv_follow_attitude = cfg.get_value("view", "fpv_attitude", fpv_follow_attitude)
 	set_drone(selected_drone)

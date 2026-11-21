@@ -21,11 +21,6 @@ func _ready() -> void:
 			func(_dir: int) -> void: Game.cycle_flight_mode())
 	add_cycler(box, "Graphics", func() -> String: return GameEnums.QUALITY_NAMES[Game.quality],
 			func(dir: int) -> void: Game.cycle_quality(dir))
-	add_toggle(box, "FPV view turns with drone",
-			func() -> bool: return Game.fpv_view_local,
-			func(on: bool) -> void:
-				Game.fpv_view_local = on
-				Game.view_lock_changed.emit())
 	add_toggle(box, "3rd person view turns with drone",
 			func() -> bool: return Game.third_view_local,
 			func(on: bool) -> void:

@@ -62,7 +62,9 @@ func _process(delta: float) -> void:
 		"SPD %4.1f m/s (%3d km/h)   ALT %5.1f m   VS %+4.1f" % [
 			v.length(), int(v.length() * 3.6), drone.global_position.y - origin_height, v.y],
 	])
-	if Game.view_mode != GameEnums.ViewMode.FLYER:
+	if Game.view_mode == GameEnums.ViewMode.FPV:
+		lines.append("Look steers drone" if PlayerRig.fpv_look_steers(drone.flight_mode) else "View turns with drone")
+	elif Game.view_mode == GameEnums.ViewMode.THIRD_PERSON:
 		lines.append("View: " + ("turns with drone" if Game.view_is_local() else "world-fixed"))
 	if drone.is_crashed:
 		lines.append("CRASHED - press B / R to reset")
