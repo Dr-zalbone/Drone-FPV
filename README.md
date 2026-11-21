@@ -187,7 +187,9 @@ tools/quest_install.sh --apk ~/Downloads/drone_fpv_vr.apk   # install an APK bui
 
 Windows runs skip VR by default. To test in the headset through Quest Link: start Link in the headset, then in Godot set **Debug → Customize Run Instances → Main Run Args** to `--xr-mode on --rendering-driver vulkan` and press Play.
 
-Performance settings: the Mobile renderer, 2× MSAA, dynamic foveation, no realtime shadows, auto mesh LODs, and a 90 Hz refresh/physics rate with physics interpolation.
+Quest builds use the **Compatibility** renderer (OpenGL ES, `renderer/rendering_method.mobile` in `project.godot`). PC keeps the Mobile renderer (Vulkan/D3D12). On the Quest 2, the Vulkan Mobile renderer showed three fixed horizontal bands of scrambled pixels, holding pieces of the menu and HUD images. It is likely an Adreno driver problem, and foveation was not the cause.
+
+Performance settings: 2× MSAA, dynamic foveation, no realtime shadows, auto mesh LODs, and a 90 Hz refresh/physics rate with physics interpolation.
 Photogrammetry maps with `unshaded` skip real-time lighting.
 The RC screen viewport renders only in Flyer view. The RC sits on its own render layer (`rc_controller`), which the drone camera never draws: the screen shows that camera's image, so seeing it would be a feedback loop.
 

@@ -12,7 +12,7 @@ config_version=5
 
 config/name="Drone FPV"
 config/description="Drone FPV VR simulator for Meta Quest 3S"
-config/version="3.2"
+config/version="3.3"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 config/icon="res://icon.svg"
@@ -128,6 +128,7 @@ common/physics_interpolation=true
 
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
 lights_and_shadows/directional_shadow/size=2048
 lights_and_shadows/directional_shadow/soft_shadow_filter_quality=0
