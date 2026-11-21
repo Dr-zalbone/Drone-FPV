@@ -22,10 +22,6 @@ const QUALITY_SETTINGS := {
 	Quality.HIGH: {"lod_threshold": 1.0, "lod_distance": 2.0, "view_distance": 4000.0, "msaa": 2, "render_scale": 1.0},
 }
 
-## OpenXR foveated rendering (OpenXRInterface.foveation_level 0-3): lower
-## resolution at the lens edges, where it is blurry anyway. Quest only.
-const FOVEATION_NAMES := ["Off", "Low", "Medium", "High"]
-
 const VIEW_NAMES := {
 	ViewMode.FPV: "FPV (goggles)",
 	ViewMode.THIRD_PERSON: "3rd person",

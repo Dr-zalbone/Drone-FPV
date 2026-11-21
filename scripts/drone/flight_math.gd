@@ -79,7 +79,7 @@ static func drag_coefficient(mass: float, thrust_to_weight: float, max_speed: fl
 	return mass * GRAVITY * thrust_to_weight / (max_speed * max_speed)
 
 
-## 3rd-person orbit: camera world position for a head orientation in a reference frame.
-static func orbit_camera_position(target: Vector3, ref_basis: Basis, head_basis: Basis, distance: float) -> Vector3:
-	var forward := -(ref_basis * head_basis).z
-	return target - forward * distance
+## 3rd-person chase camera: `distance` metres straight behind the target for a
+## drone heading `yaw` (radians). The head only rotates the view from there.
+static func chase_camera_position(target: Vector3, yaw: float, distance: float) -> Vector3:
+	return target + Basis(Vector3.UP, yaw).z * distance

@@ -39,10 +39,8 @@ func _ready() -> void:
 	add_cycler(_setup_box, "Flight mode", func() -> String: return GameEnums.FLIGHT_NAMES[Game.flight_mode], _step_flight)
 	add_cycler(_setup_box, "Graphics", func() -> String: return GameEnums.QUALITY_NAMES[Game.quality],
 			func(dir: int) -> void: Game.cycle_quality(dir))
-	add_cycler(_setup_box, "Foveation", func() -> String: return GameEnums.FOVEATION_NAMES[Game.foveation],
-			func(dir: int) -> void: Game.cycle_foveation(dir))
-	add_toggle(_setup_box, "3rd person view turns with drone",
-			func() -> bool: return Game.third_view_local, func(on: bool) -> void: Game.third_view_local = on)
+	add_toggle(_setup_box, "Show flight data",
+			func() -> bool: return Game.show_flight_data, func(on: bool) -> void: Game.show_flight_data = on)
 	add_toggle(_setup_box, "FPV horizon tilts with drone (intense)",
 			func() -> bool: return Game.fpv_follow_attitude, func(on: bool) -> void: Game.fpv_follow_attitude = on)
 	var spacer := Control.new()

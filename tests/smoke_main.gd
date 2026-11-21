@@ -44,7 +44,6 @@ func _run() -> void:
 				game.set_view_mode(view)
 				await _wait(30)
 			game.cycle_flight_mode()
-			game.toggle_view_lock()
 			await _wait(30)
 			print("   after flight: pos %s crashed %s" % [drone.global_position, drone.is_crashed])
 			main._pause()

@@ -2,6 +2,9 @@ class_name Hud
 extends Node3D
 ## Head-locked flight read-out plus short toast messages.
 
+## Height of the flight data at 1 m in front of the eyes (metres, negative = below).
+const FLIGHT_DATA_Y := -0.5
+
 var drone: Drone
 var origin_height := 0.0
 
@@ -13,9 +16,11 @@ var _tick := 0.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	position = Vector3(0, -0.28, -1.0)
-	_label = _make_label(Vector3.ZERO, 22)
-	_toast = _make_label(Vector3(0, 0.38, 0), 36)
+	# Flight data low in the view (~27 deg down); toasts above the centre, clear
+	# of the 3rd person drone.
+	position = Vector3(0, 0, -1.0)
+	_label = _make_label(Vector3(0, FLIGHT_DATA_Y, 0), 22)
+	_toast = _make_label(Vector3(0, 0.25, 0), 36)
 	visible = false
 
 
@@ -51,7 +56,7 @@ func _process(delta: float) -> void:
 		return
 	_tick = 0.1
 	# In Flyer view the RC shows telemetry; keep the head clear.
-	_label.visible = Game.view_mode != GameEnums.ViewMode.FLYER
+	_label.visible = Game.show_flight_data and Game.view_mode != GameEnums.ViewMode.FLYER
 	var v := drone.linear_velocity
 	var lines := PackedStringArray([
 		"%s  |  %s  |  %s" % [
@@ -64,8 +69,6 @@ func _process(delta: float) -> void:
 	])
 	if Game.view_mode == GameEnums.ViewMode.FPV:
 		lines.append("Look steers drone" if PlayerRig.fpv_look_steers(drone.flight_mode) else "View turns with drone")
-	elif Game.view_mode == GameEnums.ViewMode.THIRD_PERSON:
-		lines.append("View: " + ("turns with drone" if Game.view_is_local() else "world-fixed"))
 	if drone.is_crashed:
 		lines.append("CRASHED - press B / R to reset")
 	_label.text = "\n".join(lines)

@@ -8,11 +8,12 @@ imported Sketchfab worlds. Every view gives a full 360° look-around.
 | View | Who can use it | Head movement |
 |---|---|---|
 | **FPV (goggles)** | all drones | **Looking steers the drone** (DJI goggles head-tracking style): look left/right and the drone turns to face there; look up/down to tilt the camera. The yaw stick turns view and drone together. In Manual (acro) mode the view simply turns with the drone. |
-| **3rd person** | all drones | Turning your head **orbits** the camera around the drone. The default view is **world-fixed**. |
+| **3rd person** | all drones | **Chase camera**: it sits behind the drone and turns with it. Turning your head only looks around from there. |
 | **Flyer (pilot)** | Mini 5 Pro, FlyCart | You stand still as the pilot. Your body turns only on yaw with your head, and the RC is held at chest height, so looking down always shows its live drone-camera screen and telemetry. |
 
-Press **X** (or **L**) to switch the 3rd person view between "turns with drone" and "world-fixed".
+The flight data (speed, altitude) sits low in the view. Hide it with "Show flight data" in the menu or pause menu.
 In the pause menu, you can also turn on "FPV horizon tilts with drone" (real goggles feel, harder on the stomach).
+While paused, the view holds still, so the pause menu stays put in the world.
 
 ## Flight modes
 
@@ -33,7 +34,6 @@ In Manual mode the centred throttle stick means **hover thrust**, because Quest 
 | A | M | Next flight mode |
 | B | R | Reset the drone |
 | Y | V | Next view |
-| X | L | Toggle view lock (turns with drone / world-fixed) |
 | Right grip | Middle mouse button | Recenter the view |
 | Menu (left) | Esc | Pause menu |
 | Right trigger | Left mouse button | Click on menus |
@@ -128,7 +128,7 @@ Choose **Graphics** in the menu or the pause menu.
 | Medium (Quest 3S) | ×1.0 (LOD1 from 250 m+, LOD2 from 625 m+) | 1500 m | 2× | 1.0 |
 | High (PC VR) | ×2.0 | 4000 m | 4× | 1.0 |
 
-**Foveation** (Off / Low / Medium / High, menu and pause menu) sets the Quest's foveated rendering: lower resolution at the lens edges. High is the default; it saves the most GPU time.
+Foveated rendering is fixed at **High** (`xr/openxr/foveation_level=3`, dynamic): lower resolution at the lens edges, which saves GPU time.
 
 `MapLod` swaps the chunk LODs by distance using visibility ranges. Depth fog hides the view-distance cut-off.
 `tests/lod_stats.gd` prints rendered triangles per preset. With the Medium preset, Manhattan renders about 95k triangles in a typical view, against 337k in the full map.

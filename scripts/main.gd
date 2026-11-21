@@ -70,7 +70,6 @@ func _ready() -> void:
 
 	Game.view_mode_changed.connect(_on_view_mode_changed)
 	Game.flight_mode_changed.connect(_on_flight_mode_changed)
-	Game.view_lock_changed.connect(_on_view_lock_changed)
 	Game.quality_changed.connect(_apply_quality)
 	_enter_lobby()
 	_apply_quality()
@@ -125,8 +124,6 @@ func _apply_quality() -> void:
 	vp.msaa_3d = q.msaa
 	if Game.is_vr and _xr:
 		_xr.render_target_size_multiplier = q.render_scale
-		_xr.foveation_level = Game.foveation
-		_xr.foveation_dynamic = Game.foveation > 0
 	var dist: float = q.view_distance
 	rig.camera.far = dist + 100.0
 	if _env:
@@ -312,12 +309,6 @@ func _on_flight_mode_changed(mode: int) -> void:
 		rig.hud.toast("Mode: " + GameEnums.FLIGHT_NAMES[mode])
 
 
-func _on_view_lock_changed() -> void:
-	if _drone:
-		rig.recenter()
-		rig.hud.toast("3rd person view " + ("turns with drone" if Game.view_is_local() else "world-fixed"))
-
-
 func _reset_drone() -> void:
 	if _drone:
 		_drone.reset_to_spawn()
@@ -372,9 +363,6 @@ func _handle_action(action: StringName) -> void:
 		&"cycle_flight_mode":
 			if state == State.PLAYING:
 				Game.cycle_flight_mode()
-		&"toggle_view_lock":
-			if state == State.PLAYING:
-				Game.toggle_view_lock()
 		&"reset_drone":
 			if state == State.PLAYING:
 				_reset_drone()
@@ -388,8 +376,6 @@ func _on_left_button(button: String) -> void:
 			_handle_action(&"pause_menu")
 		"by_button":
 			_handle_action(&"cycle_view")
-		"ax_button":
-			_handle_action(&"toggle_view_lock")
 
 
 func _on_right_button(button: String) -> void:
@@ -410,7 +396,7 @@ func _on_right_released(button: String) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	for action: StringName in [&"pause_menu", &"cycle_view", &"cycle_flight_mode", &"toggle_view_lock", &"reset_drone"]:
+	for action: StringName in [&"pause_menu", &"cycle_view", &"cycle_flight_mode", &"reset_drone"]:
 		if event.is_action_pressed(action):
 			_handle_action(action)
 			get_viewport().set_input_as_handled()

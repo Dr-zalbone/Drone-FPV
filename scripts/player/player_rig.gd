@@ -6,7 +6,8 @@ extends XROrigin3D
 ##                  looking up/down tilts the camera. The yaw stick turns the
 ##                  view and the drone together. Manual (acro) mode has no
 ##                  heading hold, so there the view simply turns with the drone.
-##   THIRD_PERSON - head direction orbits the camera around the drone.
+##   THIRD_PERSON - chase camera behind the drone, turning with it; the head
+##                  only rotates the view (no orbit).
 ##   FLYER        - fixed pilot position on the ground; only the head moves.
 ## On desktop the XRCamera3D is driven by the mouse instead of an HMD.
 
@@ -196,9 +197,10 @@ func _update_third_person(delta: float) -> void:
 	var spec := drone.spec
 	var drone_xf := drone.get_global_transform_interpolated()
 	var target := drone_xf.origin + Vector3(0, spec.third_person_height, 0)
-	var ref := Basis(Vector3.UP, FlightMath.basis_yaw(drone_xf.basis) if Game.third_view_local else _ref_yaw)
+	var yaw := FlightMath.basis_yaw(drone_xf.basis)
+	var ref := Basis(Vector3.UP, yaw)
 	var wanted := spec.third_person_distance
-	var full_pos := FlightMath.orbit_camera_position(target, ref, camera.transform.basis, wanted)
+	var full_pos := FlightMath.chase_camera_position(target, yaw, wanted)
 	# Pull the camera in front of walls between it and the drone.
 	var space := get_world_3d().direct_space_state
 	var query := PhysicsRayQueryParameters3D.create(target, full_pos, 1, [drone.get_rid()])
@@ -207,5 +209,7 @@ func _update_third_person(delta: float) -> void:
 		wanted = maxf(target.distance_to(hit.position) - 0.2, spec.span)
 	var rate := 12.0 if wanted < _orbit_distance else 3.0
 	_orbit_distance = lerpf(_orbit_distance, wanted, clampf(delta * rate, 0.0, 1.0))
-	var cam_pos := FlightMath.orbit_camera_position(target, ref, camera.transform.basis, _orbit_distance)
+	var cam_pos := FlightMath.chase_camera_position(target, yaw, _orbit_distance)
+	# The rig (not the head) sits behind the drone and turns with it: the
+	# headset's rotation only turns the view around that point.
 	global_transform = Transform3D(ref, cam_pos - ref * camera.position)

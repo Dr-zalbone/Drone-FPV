@@ -127,12 +127,10 @@ func _test_manual_throttle() -> void:
 
 func _test_orbit() -> void:
 	var target := Vector3(10, 5, 0)
-	var p := FlightMath.orbit_camera_position(target, Basis.IDENTITY, Basis.IDENTITY, 3.0)
-	check(p.is_equal_approx(Vector3(10, 5, 3)), "looking forward puts camera behind %s" % p)
-	var left := FlightMath.orbit_camera_position(target, Basis.IDENTITY, Basis(Vector3.UP, PI / 2.0), 3.0)
-	check(left.is_equal_approx(Vector3(13, 5, 0)), "turning head left orbits %s" % left)
-	var down := FlightMath.orbit_camera_position(target, Basis.IDENTITY, Basis(Vector3.RIGHT, -PI / 4.0), 3.0)
-	check(down.y > target.y, "looking down raises camera")
+	var p := FlightMath.chase_camera_position(target, 0.0, 3.0)
+	check(p.is_equal_approx(Vector3(10, 5, 3)), "chase camera behind a drone facing -Z %s" % p)
+	var turned := FlightMath.chase_camera_position(target, PI / 2.0, 3.0)
+	check(turned.is_equal_approx(Vector3(13, 5, 0)), "drone turned left: camera swings behind it %s" % turned)
 
 
 func _test_game_views() -> void:
@@ -158,13 +156,6 @@ func _test_quality() -> void:
 	var low: Dictionary = GameEnums.QUALITY_SETTINGS[GameEnums.Quality.LOW]
 	var high: Dictionary = GameEnums.QUALITY_SETTINGS[GameEnums.Quality.HIGH]
 	check(low.lod_threshold > high.lod_threshold and low.view_distance < high.view_distance, "low preset is cheaper")
-	var fov: int = game.foveation
-	for i in GameEnums.FOVEATION_NAMES.size():
-		game.cycle_foveation()
-	check(game.foveation == fov, "foveation cycle wraps")
-	game.cycle_foveation(-fov - 1)
-	check(game.foveation == GameEnums.FOVEATION_NAMES.size() - 1, "foveation steps back past Off to High")
-	game.foveation = fov
 
 
 func _test_pilot_body() -> void:
@@ -370,7 +361,12 @@ func _test_fpv_look_steers() -> void:
 	paused = false
 	for i in 2:
 		await process_frame
-	check(not rig.global_transform.is_equal_approx(before), "unpaused: 3rd person orbits again")
+	# Chase camera: behind the drone whatever the head does (no orbit).
+	var local_cam: Vector3 = drone.global_transform.affine_inverse() * cam.global_position
+	check(local_cam.z > 1.0 and absf(local_cam.x) < 0.2,
+		"3rd person: camera stays behind the drone after a 90 deg head turn %s" % local_cam)
+	check(near(FlightMath.basis_yaw(rig.global_basis), FlightMath.basis_yaw(drone.global_basis), 0.05),
+		"3rd person: rig turns with the drone")
 	rig.queue_free()
 	drone.queue_free()
 	world.queue_free()

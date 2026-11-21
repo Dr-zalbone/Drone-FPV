@@ -3,7 +3,6 @@ extends Node
 
 signal view_mode_changed(mode: int)
 signal flight_mode_changed(mode: int)
-signal view_lock_changed
 signal quality_changed
 
 const MAP_MANIFEST := "res://assets/maps/manifest.json"
@@ -19,15 +18,12 @@ var selected_map := 0
 var selected_drone: StringName = &"mini5pro"
 var view_mode: int = VM.THIRD_PERSON
 var flight_mode: int = GameEnums.FlightMode.NORMAL
-## 3rd person view turns with the drone (true) or stays world-fixed (false).
-## FPV has no such option: there, looking steers the drone (PlayerRig).
-var third_view_local := false
 ## FPV local view also follows drone pitch/roll (real goggles feel, less comfortable).
 var fpv_follow_attitude := false
+## Show the speed/altitude read-out at the bottom of the view (Hud).
+var show_flight_data := true
 var is_vr := false
 var quality: int = GameEnums.Quality.MEDIUM
-## Index into GameEnums.FOVEATION_NAMES (0 = off). Applied with the quality preset.
-var foveation := 3
 
 
 func _ready() -> void:
@@ -93,35 +89,12 @@ func cycle_flight_mode() -> void:
 	set_flight_mode(drone_spec().next_mode(flight_mode))
 
 
-## Whether the current view turns with the drone.
-func view_is_local() -> bool:
-	match view_mode:
-		VM.FPV:
-			return true
-		VM.THIRD_PERSON:
-			return third_view_local
-	return false
-
-
-## Only 3rd person has a view lock (FPV always steers with the look).
-func toggle_view_lock() -> void:
-	if view_mode != VM.THIRD_PERSON:
-		return
-	third_view_local = not third_view_local
-	view_lock_changed.emit()
-
-
 func quality_settings() -> Dictionary:
 	return GameEnums.QUALITY_SETTINGS[quality]
 
 
 func cycle_quality(dir := 1) -> void:
 	quality = posmod(quality + dir, GameEnums.QUALITY_NAMES.size())
-	quality_changed.emit()
-
-
-func cycle_foveation(dir := 1) -> void:
-	foveation = posmod(foveation + dir, GameEnums.FOVEATION_NAMES.size())
 	quality_changed.emit()
 
 
@@ -152,9 +125,8 @@ func save_settings() -> void:
 	cfg.set_value("game", "view", view_mode)
 	cfg.set_value("game", "flight", flight_mode)
 	cfg.set_value("game", "quality", quality)
-	cfg.set_value("game", "foveation", foveation)
-	cfg.set_value("view", "third_local", third_view_local)
 	cfg.set_value("view", "fpv_attitude", fpv_follow_attitude)
+	cfg.set_value("view", "flight_data", show_flight_data)
 	cfg.save(SETTINGS_FILE)
 
 
@@ -169,9 +141,8 @@ func _load_settings() -> void:
 	view_mode = cfg.get_value("game", "view", view_mode)
 	flight_mode = cfg.get_value("game", "flight", flight_mode)
 	quality = clampi(cfg.get_value("game", "quality", quality), 0, GameEnums.QUALITY_NAMES.size() - 1)
-	foveation = clampi(cfg.get_value("game", "foveation", foveation), 0, GameEnums.FOVEATION_NAMES.size() - 1)
-	third_view_local = cfg.get_value("view", "third_local", third_view_local)
 	fpv_follow_attitude = cfg.get_value("view", "fpv_attitude", fpv_follow_attitude)
+	show_flight_data = cfg.get_value("view", "flight_data", show_flight_data)
 	set_drone(selected_drone)
 
 
