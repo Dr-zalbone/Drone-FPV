@@ -140,6 +140,10 @@ func _process(delta: float) -> void:
 		camera.transform = Transform3D(Basis.from_euler(Vector3(_desktop_pitch, _desktop_yaw, 0.0)), Vector3(0, eye, 0))
 	if drone == null or view_mode == LOBBY:
 		return
+	# Paused: hold the rig still, so the head turns in place and the pause
+	# panel stays put in the world (3rd person would otherwise orbit it).
+	if get_tree().paused:
+		return
 	if view_mode != VM.FPV:
 		drone.look_yaw = NAN
 	match view_mode:

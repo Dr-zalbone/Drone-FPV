@@ -128,6 +128,8 @@ Choose **Graphics** in the menu or the pause menu.
 | Medium (Quest 3S) | ×1.0 (LOD1 from 250 m+, LOD2 from 625 m+) | 1500 m | 2× | 1.0 |
 | High (PC VR) | ×2.0 | 4000 m | 4× | 1.0 |
 
+**Foveation** (Off / Low / Medium / High, menu and pause menu) sets the Quest's foveated rendering: lower resolution at the lens edges. High is the default; it saves the most GPU time.
+
 `MapLod` swaps the chunk LODs by distance using visibility ranges. Depth fog hides the view-distance cut-off.
 `tests/lod_stats.gd` prints rendered triangles per preset. With the Medium preset, Manhattan renders about 95k triangles in a typical view, against 337k in the full map.
 

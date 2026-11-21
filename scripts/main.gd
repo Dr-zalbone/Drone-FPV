@@ -125,6 +125,8 @@ func _apply_quality() -> void:
 	vp.msaa_3d = q.msaa
 	if Game.is_vr and _xr:
 		_xr.render_target_size_multiplier = q.render_scale
+		_xr.foveation_level = Game.foveation
+		_xr.foveation_dynamic = Game.foveation > 0
 	var dist: float = q.view_distance
 	rig.camera.far = dist + 100.0
 	if _env:

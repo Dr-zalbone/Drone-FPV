@@ -158,6 +158,13 @@ func _test_quality() -> void:
 	var low: Dictionary = GameEnums.QUALITY_SETTINGS[GameEnums.Quality.LOW]
 	var high: Dictionary = GameEnums.QUALITY_SETTINGS[GameEnums.Quality.HIGH]
 	check(low.lod_threshold > high.lod_threshold and low.view_distance < high.view_distance, "low preset is cheaper")
+	var fov: int = game.foveation
+	for i in GameEnums.FOVEATION_NAMES.size():
+		game.cycle_foveation()
+	check(game.foveation == fov, "foveation cycle wraps")
+	game.cycle_foveation(-fov - 1)
+	check(game.foveation == GameEnums.FOVEATION_NAMES.size() - 1, "foveation steps back past Off to High")
+	game.foveation = fov
 
 
 func _test_pilot_body() -> void:
@@ -353,6 +360,17 @@ func _test_fpv_look_steers() -> void:
 	for i in 2:
 		await process_frame
 	check(is_nan(drone.look_yaw), "3rd person does not steer with the look")
+	# Paused: turning the head must not orbit the rig (pause menu stays put).
+	var before: Transform3D = rig.global_transform
+	rig.desktop_look(Vector2(deg_to_rad(90.0) / rig.MOUSE_SENS, 0.0))
+	paused = true
+	for i in 2:
+		await process_frame
+	check(rig.global_transform.is_equal_approx(before), "paused: head turn does not orbit the rig")
+	paused = false
+	for i in 2:
+		await process_frame
+	check(not rig.global_transform.is_equal_approx(before), "unpaused: 3rd person orbits again")
 	rig.queue_free()
 	drone.queue_free()
 	world.queue_free()

@@ -21,6 +21,8 @@ func _ready() -> void:
 			func(_dir: int) -> void: Game.cycle_flight_mode())
 	add_cycler(box, "Graphics", func() -> String: return GameEnums.QUALITY_NAMES[Game.quality],
 			func(dir: int) -> void: Game.cycle_quality(dir))
+	add_cycler(box, "Foveation", func() -> String: return GameEnums.FOVEATION_NAMES[Game.foveation],
+			func(dir: int) -> void: Game.cycle_foveation(dir))
 	add_toggle(box, "3rd person view turns with drone",
 			func() -> bool: return Game.third_view_local,
 			func(on: bool) -> void:
