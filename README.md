@@ -163,6 +163,26 @@ powershell -ExecutionPolicy Bypass -File tools\quest_install.ps1
 Or in the editor: Project → Export → Quest 3S → Export Project, then `adb install -r build\drone_fpv_vr.apk`.
 In the headset the game is under Library → **Unknown Sources**.
 
+### Quest from Linux
+
+```bash
+git pull && git lfs pull          # once per machine before that: git lfs install
+tools/quest_install.sh            # export + install + launch
+tools/quest_install.sh --apk ~/Downloads/drone_fpv_vr.apk   # install an APK built on another PC
+```
+
+- Installing only needs `adb` (`sudo apt install adb`). Exporting also needs the Godot editor setup above, done on the laptop.
+- If `adb devices` shows `no permissions`, add a udev rule for Meta's USB vendor ID, then replug:
+  ```bash
+  echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="2833", MODE="0666"' | sudo tee /etc/udev/rules.d/51-quest.rules
+  sudo udevadm control --reload-rules && sudo udevadm trigger
+  ```
+- With the Godot flatpak, the Android SDK and JDK must be inside folders the flatpak can see (the script grants it your home folder).
+
+### PC VR testing (Quest Link)
+
+Windows runs skip VR by default. To test in the headset through Quest Link: start Link in the headset, then in Godot set **Debug → Customize Run Instances → Main Run Args** to `--xr-mode on --rendering-driver vulkan` and press Play.
+
 Performance settings: the Mobile renderer, 2× MSAA, dynamic foveation, no realtime shadows, auto mesh LODs, and a 90 Hz refresh/physics rate with physics interpolation.
 Photogrammetry maps with `unshaded` skip real-time lighting.
 The RC screen viewport renders only in Flyer view. The RC sits on its own render layer (`rc_controller`), which the drone camera never draws: the screen shows that camera's image, so seeing it would be a feedback loop.
