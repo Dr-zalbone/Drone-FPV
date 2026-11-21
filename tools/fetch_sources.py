@@ -18,6 +18,7 @@ import os
 import pathlib
 import sys
 import tempfile
+import urllib.error
 import urllib.request
 import zipfile
 
@@ -52,6 +53,18 @@ def fetch(url: str, dest: pathlib.Path) -> None:
             out.write(chunk)
 
 
+def fetch_retry(uid: str, kind: str, tok: str, dest: pathlib.Path, attempts: int = 4) -> None:
+    """Big downloads sometimes get reset mid-way; retry with a fresh signed link."""
+    for attempt in range(1, attempts + 1):
+        try:
+            fetch(download_links(uid, tok)[kind]["url"], dest)
+            return
+        except (OSError, urllib.error.URLError) as err:
+            if attempt == attempts:
+                raise
+            print(f"     retry {attempt}/{attempts - 1} after: {err}")
+
+
 def main() -> None:
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     check_only = "--check" in sys.argv
@@ -77,14 +90,14 @@ def main() -> None:
             print(f"get  {folder.name}/ (gltf zip, {links['gltf'].get('size', 0) >> 20} MB)")
             with tempfile.TemporaryDirectory() as tmp:
                 zpath = pathlib.Path(tmp) / "model.zip"
-                fetch(links["gltf"]["url"], zpath)
+                fetch_retry(e["uid"], "gltf", tok, zpath)
                 with zipfile.ZipFile(zpath) as z:
                     z.extractall(folder)
             # Godot must not import the raw source (slow, and it would ship in the APK).
             (folder / ".gdignore").write_text("", encoding="utf-8")
         elif "glb" in links:
             print(f"get  {e['file']} (glb, {links['glb'].get('size', 0) >> 20} MB)")
-            fetch(links["glb"]["url"], dest)
+            fetch_retry(e["uid"], "glb", tok, dest)
         else:
             print(f"FAIL {e['file']}: no glb/gltf download (formats: {kinds})")
 

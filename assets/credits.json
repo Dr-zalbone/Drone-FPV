@@ -1,6 +1,16 @@
 [
   {
     "kind": "map",
+    "id": "castle_of_loarre",
+    "title": "Castle Of Loarre",
+    "author": "matousekfoto",
+    "site": "Sketchfab",
+    "source_file": "castle_of_loarre_attribution-matousekfoto_on_sketchfab",
+    "license": "Sketchfab Free Standard",
+    "url": "https://sketchfab.com/3d-models/2876fc98a198429ca34ea7f0a2dae014"
+  },
+  {
+    "kind": "map",
     "id": "cathedral",
     "title": "Cathedral",
     "author": "patrix",
@@ -31,6 +41,16 @@
   },
   {
     "kind": "map",
+    "id": "leipzig_industrial_area",
+    "title": "Leipzig Industrial Area",
+    "author": "333DDD",
+    "site": "Sketchfab",
+    "source_file": "leipzig_industrial_area_attribution-333DDD_on_sketchfab",
+    "license": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/0f7a50194345495984458bb4c5e562ba"
+  },
+  {
+    "kind": "map",
     "id": "new_york_city_manhattan",
     "title": "New York City Manhattan",
     "author": "truekit",
@@ -38,5 +58,15 @@
     "source_file": "new_york_city._manhattan_attribiution-truekit_on_sketchfab",
     "license": "CC BY 4.0",
     "url": "https://sketchfab.com/3d-models/372bc495b3a941308f4a3198bc45e17b"
+  },
+  {
+    "kind": "map",
+    "id": "osaka_downtown",
+    "title": "Osaka Downtown",
+    "author": "matousekfoto",
+    "site": "Sketchfab",
+    "source_file": "osaka_downtown_attribution-matousekfoto_on_sketchfab",
+    "license": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/53e0980d555a4af6b921cc00c208e4a3"
   }
 ]

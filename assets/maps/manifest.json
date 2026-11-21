@@ -1,5 +1,29 @@
 [
   {
+    "id": "castle_of_loarre",
+    "title": "Castle Of Loarre",
+    "scene": "res://assets/maps/castle_of_loarre.glb",
+    "bounds": {
+      "min": [
+        -116.55455017089844,
+        -13.703306198120117,
+        -100.50311279296875
+      ],
+      "max": [
+        103.13459777832031,
+        61.01654052734375,
+        81.7249526977539
+      ]
+    },
+    "visual_tris": 449991,
+    "collision_tris": 60000,
+    "chunks": 19,
+    "chunk_size": 48.0,
+    "lods": true,
+    "unshaded": true,
+    "surround": "ground"
+  },
+  {
     "id": "cathedral",
     "title": "Cathedral",
     "scene": "res://assets/maps/cathedral.glb",
@@ -72,6 +96,30 @@
     "surround": "sea"
   },
   {
+    "id": "leipzig_industrial_area",
+    "title": "Leipzig Industrial Area",
+    "scene": "res://assets/maps/leipzig_industrial_area.glb",
+    "bounds": {
+      "min": [
+        -47.517921447753906,
+        -4.355041980743408,
+        -31.617630004882812
+      ],
+      "max": [
+        41.82124710083008,
+        8.926017761230469,
+        37.2982063293457
+      ]
+    },
+    "visual_tris": 349988,
+    "collision_tris": 59999,
+    "chunks": 4,
+    "chunk_size": 48.0,
+    "lods": true,
+    "unshaded": true,
+    "surround": "ground"
+  },
+  {
     "id": "new_york_city_manhattan",
     "title": "New York City Manhattan",
     "scene": "res://assets/maps/new_york_city_manhattan.glb",
@@ -94,5 +142,30 @@
     "lods": true,
     "facade_detail": true,
     "surround": "sea"
+  },
+  {
+    "id": "osaka_downtown",
+    "title": "Osaka Downtown",
+    "scene": "res://assets/maps/osaka_downtown.glb",
+    "bounds": {
+      "min": [
+        -282.79290771484375,
+        -5.659271240234375,
+        -296.4513854980469
+      ],
+      "max": [
+        305.68817138671875,
+        195.70375061035156,
+        409.6211242675781
+      ]
+    },
+    "visual_tris": 349993,
+    "collision_tris": 59999,
+    "chunks": 185,
+    "chunk_size": 48.0,
+    "lods": true,
+    "unshaded": true,
+    "surround": "ground",
+    "night": true
   }
 ]

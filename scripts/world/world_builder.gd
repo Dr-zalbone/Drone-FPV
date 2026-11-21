@@ -5,11 +5,31 @@ extends RefCounted
 const WORLD_MASK := 1
 ## Depth fog colour; also the sky's horizon and below-horizon colour.
 const FOG_COLOR := Color(0.72, 0.8, 0.9)
+## Night variant for maps scanned at night ("night": true in the manifest).
+const NIGHT_FOG_COLOR := Color(0.05, 0.07, 0.12)
+const NIGHT_SKY_TOP := Color(0.01, 0.015, 0.04)
+const DAY_SKY_TOP := Color(0.32, 0.52, 0.85)
+
+
+static func fog_color(night: bool) -> Color:
+	return NIGHT_FOG_COLOR if night else FOG_COLOR
+
+
+## Switches the shared sky, ambient light and sun between day and night.
+static func apply_sky(env: Environment, sun: DirectionalLight3D, night: bool) -> void:
+	var sky_mat := env.sky.sky_material as ProceduralSkyMaterial
+	sky_mat.sky_top_color = NIGHT_SKY_TOP if night else DAY_SKY_TOP
+	sky_mat.sky_horizon_color = fog_color(night)
+	sky_mat.ground_horizon_color = fog_color(night)
+	sky_mat.ground_bottom_color = fog_color(night)
+	sky_mat.sun_angle_max = 0.0 if night else 30.0
+	env.ambient_light_energy = 0.25 if night else 0.8
+	sun.light_energy = 0.12 if night else 1.1
 
 
 static func make_environment() -> Array[Node]:
 	var sky_mat := ProceduralSkyMaterial.new()
-	sky_mat.sky_top_color = Color(0.32, 0.52, 0.85)
+	sky_mat.sky_top_color = DAY_SKY_TOP
 	sky_mat.sky_horizon_color = Color(0.72, 0.8, 0.9)
 	# Below the horizon the sky shows past the camera's far plane (beyond the
 	# fogged map / surround plane), so it uses the fog colour: no grey band.

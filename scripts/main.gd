@@ -23,6 +23,8 @@ var _pilot: Node3D
 var _loading_path := ""
 var _xr: OpenXRInterface
 var _env: Environment
+var _sun: DirectionalLight3D
+var _night := false
 
 
 func _ready() -> void:
@@ -32,6 +34,8 @@ func _ready() -> void:
 		add_child(node)
 		if node is WorldEnvironment:
 			_env = (node as WorldEnvironment).environment
+		elif node is DirectionalLight3D:
+			_sun = node
 	_world = Node3D.new()
 	_world.name = "World"
 	_world.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -126,7 +130,7 @@ func _apply_quality() -> void:
 	if _env:
 		_env.fog_enabled = _map != null
 		_env.fog_mode = Environment.FOG_MODE_DEPTH
-		_env.fog_light_color = WorldBuilder.FOG_COLOR
+		_env.fog_light_color = WorldBuilder.fog_color(_night)
 		_env.fog_density = 1.0
 		_env.fog_depth_begin = dist * 0.55
 		_env.fog_depth_end = dist
@@ -143,6 +147,7 @@ func _apply_quality() -> void:
 func _enter_lobby() -> void:
 	state = State.MENU
 	get_tree().paused = false
+	_set_night(false)
 	_lobby = WorldBuilder.make_lobby()
 	_world.add_child(_lobby)
 	rig.enter_lobby(Transform3D.IDENTITY)
@@ -201,6 +206,7 @@ func _finish_loading(map: Node3D, entry: Dictionary) -> void:
 		_lobby = null
 	_map = map
 	_map.name = "Map"
+	_set_night(entry.get("night", false))
 	if entry.get("facade_detail", false):
 		FacadeDetail.apply(_map)
 	elif entry.get("unshaded", false):
@@ -260,6 +266,12 @@ func _finish_loading(map: Node3D, entry: Dictionary) -> void:
 	_apply_view_mode()
 	_set_mouse_for_ui(false)
 	rig.hud.toast("%s - %s" % [spec.display_name, GameEnums.FLIGHT_NAMES[_drone.flight_mode]], 3.0)
+
+
+func _set_night(night: bool) -> void:
+	_night = night
+	if _env and _sun:
+		WorldBuilder.apply_sky(_env, _sun, night)
 
 
 func _exit_to_menu() -> void:

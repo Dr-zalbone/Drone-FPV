@@ -95,6 +95,15 @@ MAP_OVERRIDES = {
     # Only ~200 m across, so distance LODs never kick in: five 120k-tri rocks
     # alone are 600k tris. Decimate the heavy meshes to fit a Quest budget.
     "lakeside_exterior_scene": {"surround": "sea", "visual_tris": 300_000},
+    # Photogrammetry (lighting baked into the photos). Small areas pack many
+    # triangles where distance LODs never kick in, so they get a budget.
+    # Night scan of a district authored as a ~50 m miniature. x12 from street
+    # widths and building footprints: ~600 x 700 m, towers up to ~230 m.
+    # "night" gives it a night sky in game.
+    "osaka_downtown": {"scale": 12.0, "unshaded": True, "surround": "ground", "visual_tris": 350_000,
+                       "night": True},
+    "leipzig_industrial_area": {"unshaded": True, "surround": "ground", "visual_tris": 350_000},
+    "castle_of_loarre": {"unshaded": True, "surround": "ground", "visual_tris": 450_000},
 }
 
 # Objects we never keep (we render our own sky).
@@ -476,7 +485,9 @@ def process(root, only=None):
             if os.path.exists(path):
                 with open(path, encoding="utf-8") as fh:
                     previous[key] = json.load(fh)
-        sources = [f for f in sources if only.lower() in f.lower()]
+        # Comma-separated filters: "osaka,skatepark" reprocesses both.
+        filters = [s.strip().lower() for s in only.split(",") if s.strip()]
+        sources = [f for f in sources if any(s in f.lower() for s in filters)]
         done = set(sources)
         credits = [c for c in previous.get("credits", []) if c.get("source_file") not in done]
         keep_ids = {c["id"] for c in credits if c.get("kind") == "map"}

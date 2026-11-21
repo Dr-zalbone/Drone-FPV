@@ -49,6 +49,9 @@ OpenXR is switched off for Windows runs (`xr/openxr/enabled.windows=false` in `p
 | Èze Village - France | [Azad Balabanian on Sketchfab](https://sketchfab.com/3d-models/a18a1449661643e6ab98640a3e7eafc1) | CC BY 4.0 |
 | Lakeside - Exterior Scene | [aurelien_martel on Sketchfab](https://sketchfab.com/3d-models/07dfe01fb78c441db081646ff4c1d9e0) | CC BY 4.0 |
 | New York City. Manhattan | [truekit on Sketchfab](https://sketchfab.com/3d-models/372bc495b3a941308f4a3198bc45e17b) | CC BY 4.0 |
+| Osaka downtown (night) | [matousekfoto on Sketchfab](https://sketchfab.com/3d-models/53e0980d555a4af6b921cc00c208e4a3) | CC BY 4.0 |
+| Leipzig industrial area | [333DDD on Sketchfab](https://sketchfab.com/3d-models/0f7a50194345495984458bb4c5e562ba) | CC BY 4.0 |
+| Castle of Loarre | [matousekfoto on Sketchfab](https://sketchfab.com/3d-models/2876fc98a198429ca34ea7f0a2dae014) | Sketchfab Free Standard |
 | Valley Town (built-in) | generated in code (`scripts/world/test_field.gd`) | — |
 
 The pilot starts on a **lookout**: a raised, flat spot with a wide view near the middle of the map, facing into the map, with flat ground for the drone close by (`WorldBuilder.find_pilot_spawn`). Dioramas such as the Cathedral set `spawn_low` instead: the pilot stands on the diorama's ground, facing the building.
@@ -106,6 +109,10 @@ Per-map tuning lives in `MAP_OVERRIDES` in `tools/process_models.py`:
 | New York City Manhattan | `scale 250`, `facade_detail`, `surround: sea` | The source is an 8 × 11 m miniature. Manhattan is an island. |
 | Cathedral | 12 m chunks, no LOD1/LOD2, `visual_dissolve`, collision voxel-remeshed at 0.35 m | It is voxel art: decimation shatters the cubes, but merging flat runs of same-coloured faces is lossless. |
 | Lakeside | `surround: sea`, skydome mesh dropped | An island in a square lake: open water past the lake's edge hides the square. |
+| Osaka downtown | `scale 12`, `night`, `visual_tris 350k` | A night scan authored as a ~50 m miniature; `night` switches the sky, fog and sun to night. |
+| Leipzig / Castle of Loarre | `visual_tris 350k / 450k` | Dense scans of small areas, where distance LODs never kick in. |
+
+All photogrammetry maps also set `unshaded` (the light is baked into the photos) and a `surround` plane.
 
 Other override keys:
 - `spawn: [x, y, z]`: fixed pilot position instead of the lookout search.
