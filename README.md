@@ -143,11 +143,13 @@ To enable it on another low-resolution map, add `"facade_detail": True` to that 
 
 One APK runs on both headsets (OpenXR, arm64). On a Quest 2, pick **Graphics: Low (Quest 2)** in the menu.
 
+The Quest needs an OpenXR **loader** inside the APK. It comes from the *Godot OpenXR Vendors* plugin (`addons/godotopenxrvendors`, v5.2.0, binaries in Git LFS), and the plugin needs a **Gradle build**. That is why the preset sets `use_gradle_build` and `enable_meta_plugin`. Without them the game starts in the headset as a flat window: "OpenXR loader not found".
+
 Editor setup (done once per PC):
 1. Install the Godot 4.7.2 Android export templates (Editor → Manage Export Templates).
-2. Editor Settings → Export → Android: set the **Android SDK path** (Android Studio: `%LOCALAPPDATA%\Android\Sdk`) and the **Java SDK path** (a JDK; 17 is the officially supported version).
+2. Editor Settings → Export → Android: set the **Android SDK path** (Android Studio: `%LOCALAPPDATA%\Android\Sdk`) and the **Java SDK path** to a **JDK 17**. Gradle 8.11 cannot run on newer JDKs such as 26.
 3. The debug keystore at that same settings page must exist. Godot creates it when a JDK is set, or create it with `keytool`.
-4. Optional: install the *Godot OpenXR Vendors* plugin for Meta-only features (needs a Gradle build).
+4. The Android build template (`android/`, git-ignored) is created by the install scripts, or by Project → Install Android Build Template. The first Gradle build downloads Gradle and its libraries, so it takes several minutes.
 
 Headset setup (done once):
 1. Create a free Meta developer organisation at developers.meta.com (Meta asks for this before allowing developer mode).

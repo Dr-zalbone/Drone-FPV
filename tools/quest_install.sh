@@ -57,7 +57,9 @@ if [ "$skip_export" -eq 0 ]; then
     rm -f "$apk"
     echo "Exporting APK (takes a minute)..."
     # shellcheck disable=SC2086  # $godot may be a multi-word flatpak command
-    $godot --headless --path "$root" --export-debug "Quest 3S" "$apk" 2>&1 | grep -E "ERROR" || true
+    # --install-android-build-template creates android/ (git-ignored) when it is
+    # missing: the Gradle build needs it for the OpenXR Vendors (Meta) plugin.
+    $godot --headless --path "$root" --install-android-build-template --export-debug "Quest 3S" "$apk" 2>&1 | grep -E -A1 "ERROR" || true
     [ -f "$apk" ] || { echo "Export failed: see the errors above." >&2; exit 1; }
 fi
 

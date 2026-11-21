@@ -24,7 +24,9 @@ if (-not $SkipExport) {
     # Godot writes errors to stderr; with "Stop", PowerShell 5 would abort on
     # the first stderr line before the reason (the next line) is printed.
     $ErrorActionPreference = "Continue"
-    $log = & $Godot --headless --path $root --export-debug "Quest 3S" $apk 2>&1 | ForEach-Object { "$_" }
+    # --install-android-build-template creates android/ (git-ignored) when it is
+    # missing: the Gradle build needs it for the OpenXR Vendors (Meta) plugin.
+    $log = & $Godot --headless --path $root --install-android-build-template --export-debug "Quest 3S" $apk 2>&1 | ForEach-Object { "$_" }
     $ErrorActionPreference = "Stop"
     # Print each ERROR line plus the line after it (the configuration reason).
     for ($i = 0; $i -lt $log.Count; $i++) {
