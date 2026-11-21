@@ -19,10 +19,21 @@ $package = "com.dronefpvvr.game"
 
 if (-not $SkipExport) {
     New-Item -ItemType Directory -Force (Split-Path $apk) | Out-Null
+    Remove-Item $apk -ErrorAction SilentlyContinue
     Write-Host "Exporting APK (takes a minute)..."
-    & $Godot --headless --path $root --export-debug "Quest 3S" $apk 2>&1 |
-        Where-Object { $_ -match "ERROR" } | ForEach-Object { Write-Host $_ }
-    if (-not (Test-Path $apk)) { throw "Export failed: see the errors above." }
+    # Godot writes errors to stderr; with "Stop", PowerShell 5 would abort on
+    # the first stderr line before the reason (the next line) is printed.
+    $ErrorActionPreference = "Continue"
+    $log = & $Godot --headless --path $root --export-debug "Quest 3S" $apk 2>&1 | ForEach-Object { "$_" }
+    $ErrorActionPreference = "Stop"
+    # Print each ERROR line plus the line after it (the configuration reason).
+    for ($i = 0; $i -lt $log.Count; $i++) {
+        if ($log[$i] -match "ERROR") {
+            Write-Host $log[$i] -ForegroundColor Red
+            if ($i + 1 -lt $log.Count -and $log[$i + 1] -notmatch "^\s*at:") { Write-Host $log[$i + 1] -ForegroundColor Red }
+        }
+    }
+    if (-not (Test-Path $apk)) { throw "Export failed: see the errors above. Missing Java/Android SDK path? Editor -> Editor Settings -> Export -> Android." }
 }
 
 # Start the adb server detached: started from a pipeline, the server inherits
