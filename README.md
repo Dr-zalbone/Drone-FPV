@@ -130,12 +130,29 @@ To make up for it, the map turns on `facade_detail`.
 
 To enable it on another low-resolution map, add `"facade_detail": True` to that map's entry in `MAP_OVERRIDES`.
 
-## Quest 3S export
+## Quest export (Quest 3S and Quest 2)
 
+One APK runs on both headsets (OpenXR, arm64). On a Quest 2, pick **Graphics: Low (Quest 2)** in the menu.
+
+Editor setup (done once per PC):
 1. Install the Godot 4.7.2 Android export templates (Editor → Manage Export Templates).
-2. Install the Android SDK and set its path in Editor Settings → Export → Android. Your current setting points to `~/Android/Sdk`.
-3. Optional: install the *Godot OpenXR Vendors* plugin from the Asset Library for Meta-specific features.
-4. Project → Export → **Quest 3S** (OpenXR mode, arm64, ETC2/ASTC textures).
+2. Editor Settings → Export → Android: set the **Android SDK path** (Android Studio: `%LOCALAPPDATA%\Android\Sdk`) and the **Java SDK path** (a JDK; 17 is the officially supported version).
+3. The debug keystore at that same settings page must exist. Godot creates it when a JDK is set, or create it with `keytool`.
+4. Optional: install the *Godot OpenXR Vendors* plugin for Meta-only features (needs a Gradle build).
+
+Headset setup (done once):
+1. Create a free Meta developer organisation at developers.meta.com (Meta asks for this before allowing developer mode).
+2. In the Meta Horizon phone app: Devices → your headset → Headset settings → **Developer mode** on.
+3. Connect the headset by USB, put it on, and accept **Allow USB debugging** (tick "Always allow").
+
+Build, install and launch:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\quest_install.ps1
+```
+
+Or in the editor: Project → Export → Quest 3S → Export Project, then `adb install -r build\drone_fpv_vr.apk`.
+In the headset the game is under Library → **Unknown Sources**.
 
 Performance settings: the Mobile renderer, 2× MSAA, dynamic foveation, no realtime shadows, auto mesh LODs, and a 90 Hz refresh/physics rate with physics interpolation.
 Photogrammetry maps with `unshaded` skip real-time lighting.
